@@ -1,0 +1,5 @@
+C:\Users\Zhe\Desktop\FE520 Proj\HelloIBCSharp\csharpclient\bin\Debug\TWSLib.dll
+C:\Users\Zhe\Desktop\FE520 Proj\HelloIBCSharp\csharpclient\bin\Debug\TWSLib.pdb
+C:\Users\Zhe\Desktop\FE520 Proj\HelloIBCSharp\csharpclient\obj\x86\Debug\TWSLib.dll
+C:\Users\Zhe\Desktop\FE520 Proj\HelloIBCSharp\csharpclient\obj\x86\Debug\TWSLib.pdb
+C:\Users\Zhe\Desktop\FE520 Proj\HelloIBCSharp\csharpclient\bin\Debug\TWSLib.tlb

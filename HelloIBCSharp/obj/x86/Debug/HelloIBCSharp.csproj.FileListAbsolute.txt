@@ -1,0 +1,14 @@
+C:\Users\zhe\Dropbox\FE520 Proj\HelloIBCSharp\bin\Debug\HelloIBCSharp.exe
+C:\Users\zhe\Dropbox\FE520 Proj\HelloIBCSharp\bin\Debug\HelloIBCSharp.pdb
+C:\Users\zhe\Dropbox\FE520 Proj\HelloIBCSharp\bin\Debug\TWSLib.dll
+C:\Users\zhe\Dropbox\FE520 Proj\HelloIBCSharp\bin\Debug\TWSLib.pdb
+C:\Users\zhe\Dropbox\FE520 Proj\HelloIBCSharp\obj\x86\Debug\HelloIBCSharp.exe
+C:\Users\zhe\Dropbox\FE520 Proj\HelloIBCSharp\obj\x86\Debug\HelloIBCSharp.pdb
+C:\Users\Zhe\Dropbox\FE520 Proj\HelloIBCSharp\obj\x86\Debug\HelloIBCSharp.csprojResolveAssemblyReference.cache
+C:\Users\zhe\Documents\GitHub\MyPairs\HelloIBCSharp\obj\x86\Debug\HelloIBCSharp.exe
+C:\Users\zhe\Documents\GitHub\MyPairs\HelloIBCSharp\obj\x86\Debug\HelloIBCSharp.pdb
+C:\Users\zhe\Documents\GitHub\MyPairs\HelloIBCSharp\bin\Debug\HelloIBCSharp.exe
+C:\Users\zhe\Documents\GitHub\MyPairs\HelloIBCSharp\bin\Debug\HelloIBCSharp.pdb
+C:\Users\zhe\Documents\GitHub\MyPairs\HelloIBCSharp\bin\Debug\TWSLib.dll
+C:\Users\zhe\Documents\GitHub\MyPairs\HelloIBCSharp\bin\Debug\TWSLib.pdb
+C:\Users\zhe\Documents\GitHub\MyPairs\HelloIBCSharp\obj\x86\Debug\HelloIBCSharp.csprojResolveAssemblyReference.cache

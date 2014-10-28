@@ -1,0 +1,118 @@
+\documentclass{article}
+\usepackage[table]{xcolor}
+\usepackage{nips13submit_e}
+\usepackage[bookmarksdepth=1]{hyperref}
+\usepackage{url}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{tabu}
+
+
+\renewcommand{\labelenumi}{(\alph{enumi})}
+
+\title{FE520: Python application in Finance: \\Pairs Trading}
+\author{
+Bing Yu\\
+    \texttt{byu6@stevens.edu}
+\And
+Jian Yang\\
+    \texttt{jyang19@stevens.edu}
+\And
+Zhe Zhao\\
+    \texttt{zzhao6@stevens.edu}
+}
+\date{\today}
+
+\nipsfinalcopy
+\begin{document}
+\maketitle
+
+\section{Schedules}
+
+\begin{tabu}{ | c | c | l | }
+	\hline
+\rowfont{\color{white}}\rowcolor{black}
+	From & To & Progress \\ \hline
+	10/07/2014 & 10/28/2014 & Build connection with Interactive Brokers \\ \hline
+	10/29/2014 & 11/4/2014 & Code the naive version of the Pairs Trading Strategy \\ \hline
+	11/5/2014 & 11/11/2014 & First improvement: kappa filter and volume adjustment. \\ \hline
+	11/12/2014 & 11/25/2014 & Second improvement: use a basket of stocks instead of one stock. \\ \hline
+	11/26/2014 & 12/02/2014 & Reports and Final Presentation \\ \hline
+\end{tabu}
+
+\section{Objectives}
+In this project, we aim at building a pairs trading strategy in python. We will connect the strategy with Interactive Brokers and trade on paper accounts.
+
+The first plan is to trade on both daily and intraday base. Our data for model calibration comes from Thomson Reuters Tick History, and we use zipline as our back testing system. The algorithm is based on a book written by Dr. Rupka Chatterjee ~\cite{chatterjee2014practical}. We also want to make our own improvement.
+
+
+
+\section{Project Description}
+\subsection{IB API Connection}
+In order to implement this strategy in reality, we need to connect to some platform to get QUOTES and send ORDERS. And IB is one of the best choice.
+
+Since IB doesn't have an offical python API, we are using the C\# API as well as a third party library "Python for dot net" together. Through this library, we can seamlessly call any dot net function and object from python.
+
+Since we are integrating two different languages and rely on some third party software, we would like to make the connection provide as much functionality as it can. Some parts of this project have to be done in C\#. Here is a list of functionality that can be provided by this connection:
+\begin{itemize}
+\item Read symbol files from CSV.
+\item Get quote data and save to containers.
+\item Record trading results.
+\end{itemize}
+
+Besides these parts, in python we will process historical and quote data, and calibrate the parameters in our model. Also whenever we have improvements, they will be implemented in python as well. We suppose there are still a lot work to do in python for this project.
+
+
+
+\subsection{Data Source}
+In this project, we will use three different types of data to trade. We will download the daily data from Yahoo Finance and download the 1 minute data and hourly data from Thomson Reuters Tick History.
+
+\subsection{Algorithm}
+We aim to implement a Factor Neutral ETF Statistical Arbitrage strategy between a  stock and a sector ETF. By monitoring the appearance of the pairs and comparing with the trading rules, we can trade automatically.
+
+The strategy roughly consists fo these parts:
+\subsubsection*{Peform linear regression on stock and ETF returns}
+\begin{center}
+$r_t^{stk} = \alpha + \beta r_t^{etf} + \epsilon_t$
+\end{center}
+\subsubsection*{Define residual process as}
+\begin{center}
+$X_t = \Sigma_{k=1}^{t}\epsilon_k$
+\end{center}
+\subsubsection*{Comparing this process to the Ornstein-Uhlenbeck(OU) process}
+\begin{center}
+$dX_t = \kappa(m-X_t)dt + \sigma dW_t$
+\end{center}
+
+According to this model, we will open positions whenever Xt goes far away from the long time average m, and will wait for it comes back and make money.
+
+
+
+
+
+
+\subsection{Back Testing}
+We will simulate Algorithmic Trading and conduct the backtesting in Zippline under the python environment. 
+The backing testing process is carried out in the following steps:
+\begin{itemize}
+\item Import the historical data
+\item Process our models through the data resources
+\item Compare the spread, also known as the hedge ratio between the two ETFS that we are choosing,  
+\item Calculate the Z-score which is the standard score of the spread
+\item Create long and short market signals and update pairs contain those signals
+\end{itemize}
+
+\section{Improvements}
+Given that naive pairs trading is hard to make money, we want to somehow find ways improve this trading strategy. Here is a potential list
+\begin{itemize}
+\item We will try to implement two filters on stock returns: Kappa filter and volume adjustment filter. 
+\item Instead of using one stock and one ETF as a pair, we will use a basket of stocks and one ETF as a pair.
+\item Further adjustments.
+\end{itemize}
+
+
+\bibliography{mybib}{}
+\bibliographystyle{plain}
+
+\end{document}
