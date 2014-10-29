@@ -12,3 +12,4 @@ C:\Users\zhe\Documents\GitHub\MyPairs\HelloIBCSharp\bin\Debug\HelloIBCSharp.pdb
 C:\Users\zhe\Documents\GitHub\MyPairs\HelloIBCSharp\bin\Debug\TWSLib.dll
 C:\Users\zhe\Documents\GitHub\MyPairs\HelloIBCSharp\bin\Debug\TWSLib.pdb
 C:\Users\zhe\Documents\GitHub\MyPairs\HelloIBCSharp\obj\x86\Debug\HelloIBCSharp.csprojResolveAssemblyReference.cache
+C:\Users\zhe\Documents\GitHub\MyPairs\HelloIBCSharp\bin\Debug\HelloIBCSharp.exe.config

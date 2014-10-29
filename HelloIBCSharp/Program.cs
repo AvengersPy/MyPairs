@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using IBApi;
+using MYLogger;
 
 namespace HelloIBCSharp
 {
@@ -24,18 +25,18 @@ namespace HelloIBCSharp
             Thread.Sleep(2000);
 
             #region testProcessSignal
-//             PairSignal tmpSignal = new PairSignal();
-//             tmpSignal.StkTID = 8;   // CSCO
-//             tmpSignal.EtfTID = 1;
-//             tmpSignal.TrSignal = PairType.openLong;
-// 
-//             ibClient.processSignal(tmpSignal);
-//             Console.ReadKey();
-// 
-//             tmpSignal.TrSignal = PairType.closeLong;
-//             ibClient.processSignal(tmpSignal);
-// 
-//             Console.ReadKey();
+            PairSignal tmpSignal = new PairSignal();
+            tmpSignal.StkTID = 8;   // CSCO
+            tmpSignal.EtfTID = 1;
+            tmpSignal.TrSignal = PairType.openLong;
+
+            ibClient.processSignal(tmpSignal);
+            Console.ReadKey();
+
+            tmpSignal.TrSignal = PairType.closeLong;
+            ibClient.processSignal(tmpSignal);
+
+            Console.ReadKey();
             #endregion
 
 
@@ -120,7 +121,7 @@ namespace HelloIBCSharp
 
             //Thread.Sleep(10000);
             #endregion
-            Console.WriteLine("");
+            Console.WriteLine("The End.");
         }
     }
 }

@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.IO;
 using IBApi;
+using MYLogger;
 
 namespace HelloIBCSharp
 {
@@ -305,7 +306,6 @@ namespace HelloIBCSharp
             }
 
             // TODO: add log file here
-            Console.WriteLine("Order Placed!, {0} {1} {2} {3}", etfOrder.Action, etfContract.Symbol, stkOrder.Action, stkContract.Symbol);
             this.ClientSocket.placeOrder(etfOrder.OrderId, etfContract, etfOrder);
             this.ClientSocket.placeOrder(stkOrder.OrderId, stkContract, stkOrder);
             this.ClientSocket.reqIds(1);
@@ -328,6 +328,8 @@ namespace HelloIBCSharp
             this.quoteDict = new Dictionary<int, List<QuoteTick>>();
             this.PairPosDict = new Dictionary<int, PairPos>();
 
+            MyLogger.Instance.Open("mylogger.txt", true);   // create/open logger file
+
             this.CSVReader(SYMBOL_FILE_DIR);
             this.CreatePairObjs();
         }
@@ -337,7 +339,10 @@ namespace HelloIBCSharp
             Environment.Exit(-2);
         }
 
-
+        ~EWrapperImpl()
+        {
+            MyLogger.Instance.Close();
+        }
 
         #region EWrapper Methods
         public virtual void error(Exception e)
@@ -382,6 +387,7 @@ namespace HelloIBCSharp
         {
             if (tickType == 4)     // field == 4, Last_Price
             {
+                //MyLogger.Instance.CreateEntry(string.Format("Tick Price. Ticker Id:" + tickerId + ", tickType: " + tickType + ", Price: " + price + ", CanAutoExecute: " + canAutoExecute + "\n"));
                 Console.WriteLine("Tick Price. Ticker Id:" + tickerId + ", tickType: " + tickType + ", Price: " + price + ", CanAutoExecute: " + canAutoExecute + "\n");
 
                 if (!this.QuoteDict.ContainsKey(tickerId))
@@ -413,6 +419,7 @@ namespace HelloIBCSharp
         {
             if (tickType == 5)
             {
+                //MyLogger.Instance.CreateEntry(string.Format("Tick Size. Ticker Id:" + tickerId + ", tickType: " + tickType + ", Size: " + size + "\n"));
                 Console.WriteLine("Tick Size. Ticker Id:" + tickerId + ", tickType: " + tickType + ", Size: " + size + "\n");
                 
                 if (!this.QuoteDict.ContainsKey(tickerId))
@@ -444,6 +451,7 @@ namespace HelloIBCSharp
         {
             long tmpTime = Convert.ToInt64(value);
             DateTime tickTime = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddSeconds(tmpTime).ToLocalTime();
+            //MyLogger.Instance.CreateEntry("Tick string. Ticker Id:" + tickerId + ", Type: " + tickType + ", Value: " + tickTime + "\n");
             Console.WriteLine("Tick string. Ticker Id:" + tickerId + ", Type: " + tickType + ", Value: " + tickTime + "\n");
             
             if (tickType != 45)
@@ -550,7 +558,12 @@ namespace HelloIBCSharp
                                         int permId, int parentId, double lastFillPrice, int clientId, string whyHeld)
         {
             Console.WriteLine("OrderStatus. Id: " + orderId + ", Status: " + status + ", Filled: " + filled + ", Remaining: " + remaining
-                + ", AvgFillPrice: " + avgFillPrice + ", PermId: " + permId + ", ParentId: " + parentId + ", LastFillPrice: " + lastFillPrice + ", ClientId: " + clientId + ", WhyHeld: " + whyHeld + "\n");
+                + ", AvgFillPrice: " + avgFillPrice + ", PermId: " + permId + ", ParentId: " + parentId + ", LastFillPrice: " + lastFillPrice 
+                + ", ClientId: " + clientId + ", WhyHeld: " + whyHeld + "\n");
+            MyLogger.Instance.CreateEntry(string.Format("OrderStatus. Id: " + orderId + ", Status: " + status + ", Filled: " + filled + ", Remaining: " + remaining
+                + ", AvgFillPrice: " + avgFillPrice + ", PermId: " + permId + ", ParentId: " + parentId + ", LastFillPrice: " + lastFillPrice
+                + ", ClientId: " + clientId + ", WhyHeld: " + whyHeld + "\n"));
+
 
             if (remaining != 0)
                 return;     // if this order not filled, do nothing
@@ -564,6 +577,7 @@ namespace HelloIBCSharp
 
         public virtual void openOrder(int orderId, Contract contract, Order order, OrderState orderState)
         {
+            MyLogger.Instance.CreateEntry("OpenOrder. ID: " + orderId + ", " + contract.Symbol + ", " + contract.SecType + " @ " + contract.Exchange + ": " + order.Action + ", " + order.OrderType + " " + order.TotalQuantity + ", " + orderState.Status + "\n");
             Console.WriteLine("OpenOrder. ID: " + orderId + ", " + contract.Symbol + ", " + contract.SecType + " @ " + contract.Exchange + ": " + order.Action + ", " + order.OrderType + " " + order.TotalQuantity + ", " + orderState.Status + "\n");
         }
 
@@ -587,6 +601,9 @@ namespace HelloIBCSharp
             Console.WriteLine("ExecDetails. " + reqId + " - " 
                                + contract.Symbol + ", " + contract.SecType + ", " + contract.Currency + " - " 
                                + execution.ExecId + ", " + execution.OrderId + ", " + execution.Shares + "\n");
+            MyLogger.Instance.CreateEntry("ExecDetails. " + reqId + " - "
+                               + contract.Symbol + ", " + contract.SecType + ", " + contract.Currency + " - "
+                               + execution.ExecId + ", " + execution.OrderId + ", " + execution.Shares + "\n");
 
             foreach (var tmpPosPair in PairPosDict.Values)
             {
@@ -602,8 +619,7 @@ namespace HelloIBCSharp
 
         public virtual void commissionReport(CommissionReport commissionReport)
         {
-            
-            
+            MyLogger.Instance.CreateEntry("CommissionReport. " + commissionReport.ExecId + " - " + commissionReport.Commission + " " + commissionReport.Currency + " RPNL " + commissionReport.RealizedPNL + "\n");
             Console.WriteLine("CommissionReport. " + commissionReport.ExecId + " - " + commissionReport.Commission + " " + commissionReport.Currency + " RPNL " + commissionReport.RealizedPNL + "\n");
             foreach (var tmpPosPair in PairPosDict.Values)
             {
