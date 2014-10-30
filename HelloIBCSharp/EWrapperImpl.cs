@@ -241,12 +241,22 @@ namespace HelloIBCSharp
             switch (oneSignal.TrSignal)
             {
                 case PairType.openLong:
+                    tmpPair.ThisPairStatus = PairType.openLong;
+                    tmpPair.pairEtfLeg.OpenOrderID= this.nextOrderId;
+                    tmpPair.pairStkLeg.OpenOrderID = this.nextOrderId + 1;
+                    break;
                 case PairType.openShort:
+                    tmpPair.ThisPairStatus = PairType.openShort;
                     tmpPair.pairEtfLeg.OpenOrderID= this.nextOrderId;
                     tmpPair.pairStkLeg.OpenOrderID = this.nextOrderId + 1;
                     break;
                 case PairType.closeLong:
+                    tmpPair.ThisPairStatus = PairType.closeLong;
+                    tmpPair.pairEtfLeg.CloseOrderID = this.nextOrderId;
+                    tmpPair.pairStkLeg.CloseOrderID = this.nextOrderId + 1;
+                    break;
                 case PairType.closeShort:
+                    tmpPair.ThisPairStatus = PairType.closeShort;
                     tmpPair.pairEtfLeg.CloseOrderID = this.nextOrderId;
                     tmpPair.pairStkLeg.CloseOrderID = this.nextOrderId + 1;
                     break;
@@ -624,7 +634,7 @@ namespace HelloIBCSharp
             foreach (var tmpPosPair in PairPosDict.Values)
             {
                 // save price and share to PosPair obj
-                tmpPosPair.saveComm(commissionReport.ExecId, commissionReport.Commission);
+                tmpPosPair.saveCommPNL(commissionReport.ExecId, commissionReport.Commission, commissionReport.RealizedPNL);
             }
         }
 

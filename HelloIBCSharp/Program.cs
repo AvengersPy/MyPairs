@@ -40,8 +40,6 @@ namespace HelloIBCSharp
             #endregion
 
 
-
-
             #region reqMktData
 
 //             Contract generalContract = new Contract();
