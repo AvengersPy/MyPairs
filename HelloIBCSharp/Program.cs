@@ -40,15 +40,26 @@ namespace HelloIBCSharp
             #endregion
 
 
+            #region Test req mkt data
+//             Contract generalContract = new Contract();
+//             generalContract.SecType = "CASH";
+//             generalContract.Currency = "USD";
+//             generalContract.Exchange = "IDEALPRO";
+//             generalContract.Symbol = "EUR";
+//             ibClient.ClientSocket.reqMktData(1, generalContract, "", false, null);
+//             Console.ReadKey();
+            #endregion
+
+
             #region reqMktData
 
 //             Contract generalContract = new Contract();
 //             generalContract.SecType = "STK";
 //             generalContract.Currency = "USD";
 //             generalContract.Exchange = "SMART";
-
-
-            // request one symbol
+// 
+// 
+//             // request one symbol
 //             generalContract.Symbol = "GOOG";
 //             ibClient.ClientSocket.reqMktData(1, generalContract, "", false, null);
 //             Console.ReadKey();

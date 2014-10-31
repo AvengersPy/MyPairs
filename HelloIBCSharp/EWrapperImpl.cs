@@ -395,6 +395,7 @@ namespace HelloIBCSharp
 
         public virtual void tickPrice(int tickerId, int tickType, double price, int canAutoExecute)
         {
+            Console.WriteLine("Tick Price. Ticker Id:" + tickerId + ", tickType: " + tickType + ", Price: " + price + ", CanAutoExecute: " + canAutoExecute + "\n");
             if (tickType == 4)     // field == 4, Last_Price
             {
                 //MyLogger.Instance.CreateEntry(string.Format("Tick Price. Ticker Id:" + tickerId + ", tickType: " + tickType + ", Price: " + price + ", CanAutoExecute: " + canAutoExecute + "\n"));
