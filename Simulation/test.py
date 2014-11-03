@@ -39,9 +39,3 @@ def linear_regression(series1, series2):
 	for j in range(2,(n)):
 		residual.append(series2[j] - a - b * series1[j])
 	return a, b, residual
-
-Y, X = loadData()
-a, b, residual = linear_regression(X, Y)
-print(a)
-print(b)
-print(residual)

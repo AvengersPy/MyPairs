@@ -14,15 +14,21 @@ namespace HelloIBCSharp
     {
         static void Main(string[] args)
         {
-            const int NUM_QUOTES = 1;
             //IB's main object
             const string symbolFile = @"C:\Users\zhe\Dropbox\FE520 Proj\HelloIBCSharp\bin\ETFSymbol.csv";
             const string quoteDir = @"C:\Users\Zhe\Dropbox\FE520 Proj\HelloIBCSharp\quotes\";
+            
+            // TODO: remove this max quote to somewhere else
             const int maxQuote = 60;
             EWrapperImpl ibClient = new EWrapperImpl(symbolFile, quoteDir, maxQuote);
             
             ibClient.ClientSocket.eConnect("127.0.0.1", 7496, 0);
             Thread.Sleep(2000);
+
+            #region Test Yahoo
+            //Console.WriteLine(ibClient.PairPosDict[8].pairStkLeg.Symbol);
+            ibClient.PairPosDict[8].getPairQuote();
+            #endregion
 
             #region testProcessSignal
             PairSignal tmpSignal = new PairSignal();

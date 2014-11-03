@@ -29,14 +29,6 @@ namespace HelloIBCSharp
        
 
         #region Pairs Trading Object
-        // restriction for Quote Data
-        int MAX_QUOTE_LIST = 0;
-        // max opening period for one pair, one receiving of quote data is one period.
-        // for example, if the trading frequency if hourly, receive quote every 11am, 12am, 1pm, 2pm, 3pm. 
-        // then there are 5 periods in a single day.
-        // for another example, if trading daily, then one day is one period
-        // in this situation, the MEAN REVERTING SPEED (aka Kappa) is a quite important filter.
-        int MAX_HOLDING_PERIOD = 20;
         // symbol file
         string SYMBOL_FILE_DIR = "";
         // quote folder dir
@@ -49,7 +41,6 @@ namespace HelloIBCSharp
         // all three maps use the same key, which is unique to a stock symbol. Basically one symbol can only appear in one index
         // will fix it later
         Dictionary<int, String> tickerSymbolDict;       // combined ticker symbol dict
-        Dictionary<int, List<QuoteTick>> quoteDict;
         Dictionary<int, PairPos> pairPosDict;           // recording all positions in pair.
 
         public Dictionary<int, String> TickerSymbolDict
@@ -57,18 +48,11 @@ namespace HelloIBCSharp
             get { return tickerSymbolDict; }
             set { tickerSymbolDict = value; }
         }
-
-        public Dictionary<int, List<QuoteTick>> QuoteDict
-        {
-            get { return quoteDict; }
-            set { quoteDict = value; }
-        }
         public Dictionary<int, PairPos> PairPosDict
         {
             get { return pairPosDict; }
             set { pairPosDict = value; }
         }
-
         #endregion
 
         #region Pairs Trading Helper Functions
@@ -119,51 +103,53 @@ namespace HelloIBCSharp
                 throw (e);
             }
         }
+
+        // quoteDict has been moved to PairPos Dict
         // CSV writer for checking quotes
-        public void CSVWriter(int tickerID)
-        {
-            // create filename
-            string fileName = "";
-            try
-            {
-                fileName = string.Format("{0}{1}_{2}.csv", QUOTE_FOLDER_DIR, tickerID, TickerSymbolDict[tickerID]);
-            }
-            catch (Exception)
-            {
-                Console.WriteLine("No ticker ID: {0}", tickerID);
-                return;
-            }
-            
-            
-            // delete the file if exists
-            if (File.Exists(fileName))
-            {
-                File.Delete(fileName);
-            }
-
-            try
-            {
-                using (FileStream fs = File.Create(fileName))
-                {
-                    // write title
-                    Byte[] title = new UTF8Encoding(true).GetBytes("Time, Price, Size\n");
-                    fs.Write(title, 0, title.Length);
-
-                    // write contents
-                    for (int i = 0; i < QuoteDict[tickerID].Count; i++)
-                    {
-                        QuoteTick tmpQtItm = QuoteDict[tickerID][i];
-                        string tmpStr = String.Format("{0},{1},{2}\n", tmpQtItm.QtTime, tmpQtItm.QtLastPrice, tmpQtItm.QtLastSize);
-                        Byte[] line = new UTF8Encoding(true).GetBytes(tmpStr);
-                        fs.Write(line, 0, line.Length);
-                    }
-                }
-            }
-            catch (Exception)
-            {
-                throw;
-            }
-        }
+//         public void CSVWriter(int tickerID)
+//         {
+//             // create filename
+//             string fileName = "";
+//             try
+//             {
+//                 fileName = string.Format("{0}{1}_{2}.csv", QUOTE_FOLDER_DIR, tickerID, TickerSymbolDict[tickerID]);
+//             }
+//             catch (Exception)
+//             {
+//                 Console.WriteLine("No ticker ID: {0}", tickerID);
+//                 return;
+//             }
+//             
+//             
+//             // delete the file if exists
+//             if (File.Exists(fileName))
+//             {
+//                 File.Delete(fileName);
+//             }
+// 
+//             try
+//             {
+//                 using (FileStream fs = File.Create(fileName))
+//                 {
+//                     // write title
+//                     Byte[] title = new UTF8Encoding(true).GetBytes("Time, Price, Size\n");
+//                     fs.Write(title, 0, title.Length);
+// 
+//                     // write contents
+//                     for (int i = 0; i < QuoteDict[tickerID].Count; i++)
+//                     {
+//                         QuoteTick tmpQtItm = QuoteDict[tickerID][i];
+//                         string tmpStr = String.Format("{0},{1},{2}\n", tmpQtItm.QtTime, tmpQtItm.QtLastPrice, tmpQtItm.QtLastSize);
+//                         Byte[] line = new UTF8Encoding(true).GetBytes(tmpStr);
+//                         fs.Write(line, 0, line.Length);
+//                     }
+//                 }
+//             }
+//             catch (Exception)
+//             {
+//                 throw;
+//             }
+//         }
         // go through the symbol dictionary, and fill out the PairPosition dictionary
         public void CreatePairObjs()
         {
@@ -194,6 +180,18 @@ namespace HelloIBCSharp
                 this.PairPosDict.Add(KeyValuePair.Key, newPair);
             }
         }
+        // get quote for all pairs
+        // there will be multiple identical etf quotes. 
+        // however this is necessity for now
+        // maybe optimized later
+        public void getAllQuote()
+        {
+            foreach(var pairobj in this.PairPosDict)
+            {
+                pairobj.Value.getPairQuote();
+            }
+        }
+        // process signal generate by python algo and send order 
         public void processSignal(PairSignal oneSignal)
         {
             if (oneSignal.TrSignal == PairType.nullType)
@@ -329,13 +327,16 @@ namespace HelloIBCSharp
         //String etfDir, String stkDir
         public EWrapperImpl(string symbolFileDir, string quoteFolderDir, int maxQuote)
         {
-            this.MAX_QUOTE_LIST = maxQuote;
+            //this.MAX_QUOTE_LIST = maxQuote;
             this.SYMBOL_FILE_DIR = symbolFileDir;
             this.QUOTE_FOLDER_DIR = quoteFolderDir;
 
             this.clientSocket = new EClientSocket(this);
             this.tickerSymbolDict = new Dictionary<int, string>();
-            this.quoteDict = new Dictionary<int, List<QuoteTick>>();
+            
+            // quote dict has been moved
+            //this.quoteDict = new Dictionary<int, List<QuoteTick>>();
+            
             this.PairPosDict = new Dictionary<int, PairPos>();
 
             MyLogger.Instance.Open("mylogger.txt", true);   // create/open logger file
@@ -396,66 +397,67 @@ namespace HelloIBCSharp
         public virtual void tickPrice(int tickerId, int tickType, double price, int canAutoExecute)
         {
             Console.WriteLine("Tick Price. Ticker Id:" + tickerId + ", tickType: " + tickType + ", Price: " + price + ", CanAutoExecute: " + canAutoExecute + "\n");
-            if (tickType == 4)     // field == 4, Last_Price
-            {
-                //MyLogger.Instance.CreateEntry(string.Format("Tick Price. Ticker Id:" + tickerId + ", tickType: " + tickType + ", Price: " + price + ", CanAutoExecute: " + canAutoExecute + "\n"));
-                Console.WriteLine("Tick Price. Ticker Id:" + tickerId + ", tickType: " + tickType + ", Price: " + price + ", CanAutoExecute: " + canAutoExecute + "\n");
-
-                if (!this.QuoteDict.ContainsKey(tickerId))
-                {
-                    // if new tickerID...Error, new ticker id should be added during tickString already
-                    // tickPrice and tickSize should appear after tickString
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine("Ticker Price. Error: tickPrice received after tickString");
-                    Console.ResetColor();
-                    //Console.WriteLine("Enter any key to stop...");
-                    //Console.ReadKey();
-                    // ignore this data
-                    return;
-                }
-
-                // A "strange way" of modifying the last item in the list
-                int listCnt = QuoteDict[tickerId].Count;
-                QuoteTick tmpQtItm = QuoteDict[tickerId].LastOrDefault();
-                if (tmpQtItm.QtLastPrice!= 0)   // already received tickPrice
-                    return;
-                
-                tmpQtItm.QtLastPrice = price;
-                QuoteDict[tickerId].RemoveAt(listCnt - 1);
-                QuoteDict[tickerId].Add(tmpQtItm);
-            }
+//             if (tickType == 4)     // field == 4, Last_Price
+//             {
+//                 //MyLogger.Instance.CreateEntry(string.Format("Tick Price. Ticker Id:" + tickerId + ", tickType: " + tickType + ", Price: " + price + ", CanAutoExecute: " + canAutoExecute + "\n"));
+//                 Console.WriteLine("Tick Price. Ticker Id:" + tickerId + ", tickType: " + tickType + ", Price: " + price + ", CanAutoExecute: " + canAutoExecute + "\n");
+// 
+//                 if (!this.QuoteDict.ContainsKey(tickerId))
+//                 {
+//                     // if new tickerID...Error, new ticker id should be added during tickString already
+//                     // tickPrice and tickSize should appear after tickString
+//                     Console.ForegroundColor = ConsoleColor.Red;
+//                     Console.WriteLine("Ticker Price. Error: tickPrice received after tickString");
+//                     Console.ResetColor();
+//                     //Console.WriteLine("Enter any key to stop...");
+//                     //Console.ReadKey();
+//                     // ignore this data
+//                     return;
+//                 }
+// 
+//                 // A "strange way" of modifying the last item in the list
+//                 int listCnt = QuoteDict[tickerId].Count;
+//                 QuoteTick tmpQtItm = QuoteDict[tickerId].LastOrDefault();
+//                 if (tmpQtItm.QtLastPrice!= 0)   // already received tickPrice
+//                     return;
+//                 
+//                 tmpQtItm.QtLastPrice = price;
+//                 QuoteDict[tickerId].RemoveAt(listCnt - 1);
+//                 QuoteDict[tickerId].Add(tmpQtItm);
+//             }
         }
 
         public virtual void tickSize(int tickerId, int tickType, int size)
         {
-            if (tickType == 5)
-            {
-                //MyLogger.Instance.CreateEntry(string.Format("Tick Size. Ticker Id:" + tickerId + ", tickType: " + tickType + ", Size: " + size + "\n"));
-                Console.WriteLine("Tick Size. Ticker Id:" + tickerId + ", tickType: " + tickType + ", Size: " + size + "\n");
-                
-                if (!this.QuoteDict.ContainsKey(tickerId))
-                {
-                    // if new tickerID...Error, new ticker id should be added during tickString already
-                    // tickPrice and tickSize should appear after tickString
-
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine("Ticker Price. Error: tickPrice received after tickString");
-                    Console.ResetColor();
-                    //Console.WriteLine("Enter any key to stop...");
-                    //Console.ReadKey();
-                    // ignore this data
-                    return;
-                }
-
-                int listCnt = QuoteDict[tickerId].Count;
-                QuoteTick tmpQtItm = QuoteDict[tickerId].LastOrDefault();
-                if (tmpQtItm.QtLastSize != 0)   // already received tickSize
-                    return;
-
-                tmpQtItm.QtLastSize = size;     // actually we don't care about size in pairs trading
-                QuoteDict[tickerId].RemoveAt(listCnt - 1);
-                QuoteDict[tickerId].Add(tmpQtItm);
-            }
+            Console.WriteLine("Tick Size. Ticker Id:" + tickerId + ", tickType: " + tickType + ", Size: " + size + "\n");
+//          if (tickType == 5)
+//             {
+//                 //MyLogger.Instance.CreateEntry(string.Format("Tick Size. Ticker Id:" + tickerId + ", tickType: " + tickType + ", Size: " + size + "\n"));
+//                 Console.WriteLine("Tick Size. Ticker Id:" + tickerId + ", tickType: " + tickType + ", Size: " + size + "\n");
+//                 
+//                 if (!this.QuoteDict.ContainsKey(tickerId))
+//                 {
+//                     // if new tickerID...Error, new ticker id should be added during tickString already
+//                     // tickPrice and tickSize should appear after tickString
+// 
+//                     Console.ForegroundColor = ConsoleColor.Red;
+//                     Console.WriteLine("Ticker Price. Error: tickPrice received after tickString");
+//                     Console.ResetColor();
+//                     //Console.WriteLine("Enter any key to stop...");
+//                     //Console.ReadKey();
+//                     // ignore this data
+//                     return;
+//                 }
+// 
+//                 int listCnt = QuoteDict[tickerId].Count;
+//                 QuoteTick tmpQtItm = QuoteDict[tickerId].LastOrDefault();
+//                 if (tmpQtItm.QtLastSize != 0)   // already received tickSize
+//                     return;
+// 
+//                 tmpQtItm.QtLastSize = size;     // actually we don't care about size in pairs trading
+//                 QuoteDict[tickerId].RemoveAt(listCnt - 1);
+//                 QuoteDict[tickerId].Add(tmpQtItm);
+//             }
         }
 
         public virtual void tickString(int tickerId, int tickType, string value)
@@ -465,46 +467,46 @@ namespace HelloIBCSharp
             //MyLogger.Instance.CreateEntry("Tick string. Ticker Id:" + tickerId + ", Type: " + tickType + ", Value: " + tickTime + "\n");
             Console.WriteLine("Tick string. Ticker Id:" + tickerId + ", Type: " + tickType + ", Value: " + tickTime + "\n");
             
-            if (tickType != 45)
-            {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("Tick string. TICKTYPE NOT 45! Type: {0}", tickType);
-                Console.ResetColor();
-            }
-
-
-            if (!QuoteDict.ContainsKey(tickerId))
-            {
-                // if new tID, add new element to QuoteDict
-                List<QuoteTick> tmpList = new List<QuoteTick>();
-                QuoteTick tmpQt = new QuoteTick();
-                tmpQt.QtTime = tickTime;
-                tmpList.Add(tmpQt);
-
-                QuoteDict.Add(tickerId, tmpList);
-            }
-            else
-            {
-                // if existing tID, add one more element to the QuoteList
-                // before adding, check if the previous quote in QtList is complete or not
-                QuoteTick tmpQtItm = QuoteDict[tickerId].LastOrDefault();
-                if (tmpQtItm.QtLastPrice == 0 | tmpQtItm.QtLastSize == 0)
-                {
-                    int listCnt = QuoteDict[tickerId].Count;
-                    QuoteDict[tickerId].RemoveAt(listCnt - 1);
-                }
-
-                QuoteTick tmpQt = new QuoteTick();
-                tmpQt.QtTime = tickTime;
-
-                QuoteDict[tickerId].Add(tmpQt);
-
-                while (QuoteDict[tickerId].Count > MAX_QUOTE_LIST)
-                {
-                    // Remove the first element if recorded too many quotes
-                    QuoteDict[tickerId].RemoveAt(0);
-                }
-            }
+//             if (tickType != 45)
+//             {
+//                 Console.ForegroundColor = ConsoleColor.Red;
+//                 Console.WriteLine("Tick string. TICKTYPE NOT 45! Type: {0}", tickType);
+//                 Console.ResetColor();
+//             }
+// 
+// 
+//             if (!QuoteDict.ContainsKey(tickerId))
+//             {
+//                 // if new tID, add new element to QuoteDict
+//                 List<QuoteTick> tmpList = new List<QuoteTick>();
+//                 QuoteTick tmpQt = new QuoteTick();
+//                 tmpQt.QtTime = tickTime;
+//                 tmpList.Add(tmpQt);
+// 
+//                 QuoteDict.Add(tickerId, tmpList);
+//             }
+//             else
+//             {
+//                 // if existing tID, add one more element to the QuoteList
+//                 // before adding, check if the previous quote in QtList is complete or not
+//                 QuoteTick tmpQtItm = QuoteDict[tickerId].LastOrDefault();
+//                 if (tmpQtItm.QtLastPrice == 0 | tmpQtItm.QtLastSize == 0)
+//                 {
+//                     int listCnt = QuoteDict[tickerId].Count;
+//                     QuoteDict[tickerId].RemoveAt(listCnt - 1);
+//                 }
+// 
+//                 QuoteTick tmpQt = new QuoteTick();
+//                 tmpQt.QtTime = tickTime;
+// 
+//                 QuoteDict[tickerId].Add(tmpQt);
+// 
+//                 while (QuoteDict[tickerId].Count > MAX_QUOTE_LIST)
+//                 {
+//                     // Remove the first element if recorded too many quotes
+//                     QuoteDict[tickerId].RemoveAt(0);
+//                 }
+//             }
         }
 
         public virtual void tickGeneric(int tickerId, int field, double value)
