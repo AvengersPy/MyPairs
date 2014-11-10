@@ -33,7 +33,6 @@ namespace MYLogger
             {
                 throw new InvalidOperationException("Logger is already open");
             }
-
             logWriter = new StreamWriter(filePath, append);
             logWriter.AutoFlush = true;
         }
@@ -46,7 +45,6 @@ namespace MYLogger
                 logWriter = null;
             }
         }
-
         public void CreateEntry(string entry)
         {
             if (this.logWriter == null)

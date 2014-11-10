@@ -51,8 +51,8 @@ namespace HelloIBCSharp
             #endregion
 
             //Stay alive for a little while
+            Console.ReadKey();
             Console.WriteLine("The End.");
-            Thread.Sleep(10000);
         }
     }
 }

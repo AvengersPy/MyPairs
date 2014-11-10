@@ -256,6 +256,7 @@ namespace PairObj
             this.StkLeg = stk;
 
             this.sScore = new double[4];
+            this.currHoldingPeriod = -1;
             this.thisPairStatus = PairType.nullType;
         }
         const int MAX_HOLDING_PERIOD = 20;
@@ -267,6 +268,7 @@ namespace PairObj
         long openTime;
         long closeTime;
         PairType thisPairStatus;
+        int currHoldingPeriod;
         
         // parameters from regression
         double pairBeta;
@@ -311,7 +313,12 @@ namespace PairObj
             get { return thisPairStatus; }
             set { thisPairStatus = value; }
         }
-
+        public int CurrHoldingPeriod
+        {
+            get { return currHoldingPeriod; }
+            set { currHoldingPeriod = value; }
+        }
+        
         // parameters from regression
         public double PairBeta
         {
@@ -448,8 +455,8 @@ namespace PairObj
             }
         }
         #endregion
-        // close this position, for reasons like stop loss
-        private void closeThisPosition()
+        // close this position, for reasons like stop loss, max holding periods
+        public void closeThisPosition()
         {
             PairSignal selfSignal = new PairSignal(this.stkLeg.TickerID, this.etfLeg.TickerID);
             switch (this.thisPairStatus)
@@ -466,7 +473,7 @@ namespace PairObj
             // TODO
             EWrapperImpl.Instance.processSignal(selfSignal);
         }
-        public void calcUnPNL()
+        public bool exceedMaxLoss()
         {
             switch (this.thisPairStatus)
             {
@@ -482,18 +489,25 @@ namespace PairObj
             if (this.stkLeg.UnrealizedPNL != -1000 && this.etfLeg.UnrealizedPNL != -1000)
             {
                 this.totalUnrealizedPNL = this.stkLeg.UnrealizedPNL + this.etfLeg.UnrealizedPNL;
-                if (this.totalUnrealizedPNL / this.totalBP < STOP_LOSS)
+                if (this.totalUnrealizedPNL / this.totalBP >= STOP_LOSS)
                 {
                     // stop loss, close pair position
-                    this.closeThisPosition();
+                    return false;
                 }
             }
             else
             {
                 throw new Exception("Uninitialized PNL for stk or etf!");
             }
+            return true;
         }
-        // TODO: add self-close here.
+        public bool exceedMaxHoldingTime()
+        {
+            if (this.currHoldingPeriod <= MAX_HOLDING_PERIOD)
+            {
+                return false;
+            }
+            return true;
+        }
     }
-
 }

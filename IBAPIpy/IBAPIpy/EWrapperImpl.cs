@@ -45,12 +45,14 @@ namespace HelloIBCSharp
             this.clientSocket = new EClientSocket(this);
             this.equityDict = new Dictionary<int, Equities>();
             this.PairPosDict = new Dictionary<int, PairPos>();
-            MyLogger.Instance.Open("mylogger.txt", true);   // create/open logger file
+            File.Copy("mylogger.txt", "backup_logger.txt", true);
+            MyLogger.Instance.Open("mylogger.txt", false);   // create/open logger file
 
             this.readSymbols(SYMBOL_FILE_DIR);
         }
         ~EWrapperImpl()
         {
+            //MyLogger.Instance.BackupAndClear("mylogger.txt");
             MyLogger.Instance.Close();
         }
         #endregion
@@ -209,21 +211,29 @@ namespace HelloIBCSharp
                     tmpPair.ThisPairStatus = PairType.openLong;
                     tmpPair.EtfLeg.OpenOrderID= this.nextOrderId;
                     tmpPair.StkLeg.OpenOrderID = this.nextOrderId + 1;
+                    
+                    tmpPair.CurrHoldingPeriod = 0;  // open, holding period = 0
                     break;
                 case PairType.openShort:
                     tmpPair.ThisPairStatus = PairType.openShort;
                     tmpPair.EtfLeg.OpenOrderID= this.nextOrderId;
                     tmpPair.StkLeg.OpenOrderID = this.nextOrderId + 1;
+                    
+                    tmpPair.CurrHoldingPeriod = 0;
                     break;
                 case PairType.closeLong:
                     tmpPair.ThisPairStatus = PairType.closeLong;
                     tmpPair.EtfLeg.CloseOrderID = this.nextOrderId;
                     tmpPair.StkLeg.CloseOrderID = this.nextOrderId + 1;
+
+                    tmpPair.CurrHoldingPeriod = -1; // close, holding period = -1
                     break;
                 case PairType.closeShort:
                     tmpPair.ThisPairStatus = PairType.closeShort;
                     tmpPair.EtfLeg.CloseOrderID = this.nextOrderId;
                     tmpPair.StkLeg.CloseOrderID = this.nextOrderId + 1;
+
+                    tmpPair.CurrHoldingPeriod = -1;
                     break;
                 default:
                     Console.WriteLine("Wrong signal type. Press any key to start over...");
@@ -295,7 +305,29 @@ namespace HelloIBCSharp
             foreach (var onePair in this.pairPosDict.Values)
             {
                 onePair.TotalUnrealizedPNL = onePair.StkLeg.UnrealizedPNL + onePair.EtfLeg.UnrealizedPNL;
-                onePair.calcUnPNL();    // calc unrealized PNL and stop loss
+                // check stop loss
+                if (onePair.exceedMaxLoss())
+                {
+                    Console.WriteLine("Stop Loss! {0}, {1}, {2}", onePair.StkLeg.Symbol, onePair.StkLeg.Symbol, onePair.TotalUnrealizedPNL);
+                    MyLogger.Instance.CreateEntry(String.Format("Stop Loss! {0}, {1}, {2}", onePair.StkLeg.Symbol, onePair.StkLeg.Symbol, onePair.TotalUnrealizedPNL));
+                    onePair.closeThisPosition();
+                }
+
+                // check max holding time
+                if (onePair.CurrHoldingPeriod == -1)
+                {
+                    // unopened pair position, no holding time
+                    continue;
+                }
+
+                onePair.CurrHoldingPeriod += 1;
+
+                if (onePair.exceedMaxHoldingTime())
+                {
+                    Console.WriteLine("Holding too long! {0}, {1}, {2}", onePair.StkLeg.Symbol, onePair.StkLeg.Symbol, onePair.TotalUnrealizedPNL);
+                    MyLogger.Instance.CreateEntry(String.Format("Holding too long! {0}, {1}, {2}", onePair.StkLeg.Symbol, onePair.StkLeg.Symbol, onePair.TotalUnrealizedPNL));
+                    onePair.closeThisPosition();
+                }
             }
         }
         #endregion
