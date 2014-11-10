@@ -10,30 +10,48 @@ using MYLogger;
 using Yahoo;
 using PairObj;
 
-
 namespace HelloIBCSharp
 {
     class Program
     {
         static void Main(string[] args)
         {
-            //IB's main object
-            EWrapperImpl ibClient = new EWrapperImpl();
-
+            
             //Connect
-            ibClient.ClientSocket.eConnect("127.0.0.1", 7496, 0);
+            EWrapperImpl.Instance.ClientSocket.eConnect("127.0.0.1", 7496, 0);
+            Thread.Sleep(2000);
 
+            EWrapperImpl.Instance.getAllQuote();
+
+            PairSignal tmpSignal = new PairSignal();
+            tmpSignal.StkTID = 8;   // CSCO
+            tmpSignal.EtfTID = 1;
+            tmpSignal.TrSignal = PairType.openLong;
+
+            //ibClient.processSignal(tmpSignal);
+            Console.ReadKey();
+
+            EWrapperImpl.Instance.getAllQuote();
+
+            tmpSignal.TrSignal = PairType.closeLong;
+            EWrapperImpl.Instance.processSignal(tmpSignal);
+            
+            Console.ReadKey();
+
+            #region request market data IB
             //Create and define a contract to fetch data for
-            Contract contract = new Contract();
-            contract.Symbol = "EUR";
-            contract.SecType = "CASH";
-            contract.Currency = "GBP";
-            contract.Exchange = "IDEALPRO";
-
-            //Invoke IB's ClientSocket's data request
-            ibClient.ClientSocket.reqMktData(1, contract, "", false, null);
+//             Contract contract = new Contract();
+//             contract.Symbol = "EUR";
+//             contract.SecType = "CASH";
+//             contract.Currency = "GBP";
+//             contract.Exchange = "IDEALPRO";
+// 
+//             //Invoke IB's ClientSocket's data request
+            //             ibClient.ClientSocket.reqMktData(1, contract, "", false, null);
+            #endregion
 
             //Stay alive for a little while
+            Console.WriteLine("The End.");
             Thread.Sleep(10000);
         }
     }

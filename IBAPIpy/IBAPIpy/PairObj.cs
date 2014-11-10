@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Text.RegularExpressions;   // replace multiple values in a string
 using Yahoo;
+using HelloIBCSharp;
 
 
 
@@ -56,6 +57,19 @@ namespace PairObj
         int etfTID;
         PairType trSignal;
 
+        public PairSignal(int _stkID, int _etfID)
+        {
+            this.stkTID = _stkID;
+            this.etfTID = _etfID;
+            this.trSignal = PairType.nullType;
+        }
+        public PairSignal()
+        {
+            this.stkTID = 0;
+            this.etfTID = 0;
+            this.trSignal = PairType.nullType;
+        }
+
         #region Encap
         public PairType TrSignal
         {
@@ -78,7 +92,19 @@ namespace PairObj
     // stk or etf object, recognized by even/odd tickerID
     public class Equities
     {
-        const int TMP_QUOTE_SIZE = 9;       // calculate the average of how many quotes
+        public Equities()
+        {
+            throw new Exception("Missing Symbol and/or Ticker ID when createing equity obj!");
+        }
+        public Equities(int _tickerID, string _symbol)
+        {
+            this.tickerID = _tickerID;
+            this.symbol = _symbol;
+
+            this.unrealizedPNL = -1000;    // initial value of uPNL
+        }
+
+        const int TMP_QUOTE_SIZE = 5;       // calculate the average of how many quotes
         const int MAX_QUOTE_LIST = 60;      // maximum number of quotes in quote list
 
         int tickerID;
@@ -101,15 +127,6 @@ namespace PairObj
 
         List<Quotes> quoteList = new List<Quotes>();
 
-        public Equities()
-        {
-            throw new Exception("Missing Symbol and/or Ticker ID when createing equity obj!");
-        }
-        public Equities(int _tickerID, string _symbol)
-        {
-            this.tickerID = _tickerID;
-            this.symbol = _symbol;
-        }
         public void getQuoteYahoo()
         {
             // sorted by price, for calculate mean
@@ -121,11 +138,13 @@ namespace PairObj
                 string[] entries = stkQuote.Replace("\r", "").Split(',');
 
                 Quotes tmpQuote = new Quotes();
-                tmpQuote.QtTime = Convert.ToDateTime(entries[1]);   // why data magically appeared? TODO: figure it out after 12am someday
+                // TODO: last price only, maybe change later.
                 tmpQuote.QtLastPrice = Convert.ToDouble(entries[2]);
-                tmpQuote.QtLastSize = Convert.ToInt64(entries[3]);
+                //tmpQuote.QtTime = Convert.ToDateTime(entries[1]);   // why data magically appeared? TODO: figure it out after 12am someday
+                //tmpQuote.QtLastSize = Convert.ToInt64(entries[3]);
                 tmpQuoteLst.Add(tmpQuote);
             }
+
             List<Quotes> SortedList = tmpQuoteLst.OrderBy(o => o.QtLastPrice).ToList();
             // calculate average, take away the smallest and the largest price
             double avgPrice = 0;
@@ -149,7 +168,11 @@ namespace PairObj
             // TODO: this is incorrect. Need bid/ask price for the correct number.
             // probably later
             Quotes lastQuote = quoteList[quoteList.Count - 1];
-            this.unrealizedPNL = (lastQuote.QtLastPrice - this.openPrice) * this.share;
+            if (this.openPrice != 0)
+            {
+                this.unrealizedPNL = (lastQuote.QtLastPrice - this.openPrice) * this.share;
+            }
+            Console.WriteLine("Getting quote {0}", this.symbol);
         }
         
         #region Encap
@@ -238,8 +261,8 @@ namespace PairObj
         const int MAX_HOLDING_PERIOD = 20;
         const double STOP_LOSS = 0.1;       // maximum loss ratio
 
-        public Equities StkLeg;
-        public Equities EtfLeg;
+        Equities stkLeg;
+        Equities etfLeg;
 
         long openTime;
         long closeTime;
@@ -263,6 +286,16 @@ namespace PairObj
         double totalComm;
 
         #region Encap
+        public Equities StkLeg
+        {
+            get { return stkLeg; }
+            set { stkLeg = value; }
+        }
+        public Equities EtfLeg
+        {
+            get { return etfLeg; }
+            set { etfLeg = value; }
+        }
         public long OpenTime
         {
             get { return openTime; }
@@ -415,7 +448,51 @@ namespace PairObj
             }
         }
         #endregion
+        // close this position, for reasons like stop loss
+        private void closeThisPosition()
+        {
+            PairSignal selfSignal = new PairSignal(this.stkLeg.TickerID, this.etfLeg.TickerID);
+            switch (this.thisPairStatus)
+            {
+                case PairType.openLong:
+                    selfSignal.TrSignal = PairType.closeLong;
+                    break;
+                case PairType.openShort:
+                    selfSignal.TrSignal = PairType.closeShort;
+                    break;
+                default:
+                    throw new Exception( String.Format("Cannot close my self! Status = {}", Convert.ToString(this.ThisPairStatus)) );
+            }
+            // TODO
+            EWrapperImpl.Instance.processSignal(selfSignal);
+        }
+        public void calcUnPNL()
+        {
+            switch (this.thisPairStatus)
+            {
+                case PairType.nullType:
+                    throw new Exception("Cannot calculate PNL, pair position uninitialized!");
+                    break;
+                case PairType.closeLong:
+                case PairType.closeShort:
+                    throw new Exception("Cannot calculate PNL, pair position closed!");
+                    break;
 
+            }
+            if (this.stkLeg.UnrealizedPNL != -1000 && this.etfLeg.UnrealizedPNL != -1000)
+            {
+                this.totalUnrealizedPNL = this.stkLeg.UnrealizedPNL + this.etfLeg.UnrealizedPNL;
+                if (this.totalUnrealizedPNL / this.totalBP < STOP_LOSS)
+                {
+                    // stop loss, close pair position
+                    this.closeThisPosition();
+                }
+            }
+            else
+            {
+                throw new Exception("Uninitialized PNL for stk or etf!");
+            }
+        }
         // TODO: add self-close here.
     }
 

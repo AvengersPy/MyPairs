@@ -26,42 +26,46 @@ namespace HelloIBCSharp
             set { nextOrderId = value; }
         }
 
-        //String etfDir, String stkDir
-        public EWrapperImpl(string symbolFileDir, int maxQuote)
+        #region Constructor Singleton
+        private static EWrapperImpl instance;
+        public static EWrapperImpl Instance
+        {
+            get
+            {
+                if (instance == null)
+                {
+                    instance = new EWrapperImpl();
+                }
+                return instance;
+            }
+        }
+        private EWrapperImpl()
         {
             //this.MAX_QUOTE_LIST = maxQuote;
-            this.SYMBOL_FILE_DIR = symbolFileDir;
-
             this.clientSocket = new EClientSocket(this);
-            this.tickerSymbolDict = new Dictionary<int, string>();
+            this.equityDict = new Dictionary<int, Equities>();
             this.PairPosDict = new Dictionary<int, PairPos>();
             MyLogger.Instance.Open("mylogger.txt", true);   // create/open logger file
 
             this.readSymbols(SYMBOL_FILE_DIR);
         }
-        public EWrapperImpl()   // two csv files containing idx symbol and stk symbol
-        {
-            throw new Exception("Missing symbol files in constructor");
-        }
         ~EWrapperImpl()
         {
             MyLogger.Instance.Close();
         }
+        #endregion
 
         #region Pairs Trading Object
-        string SYMBOL_FILE_DIR = "";    // symbol file
+        const string SYMBOL_FILE_DIR = @"C:\Users\Zhe\Documents\GitHub\MyPairs\IBAPIpy\IBAPIpy\bin\dow.csv";    // symbol file
         
-        // Including three dictionaries: Symbol, Quote and Pair Position
-        // all three maps use the same key, which is unique to a stock symbol. Basically one symbol can only appear in one index
-        // will fix it later
-        Dictionary<int, String> tickerSymbolDict;       // combined ticker symbol dict
-        Dictionary<int, PairPos> pairPosDict;           // key, stkID, recording all positions in pair.
+        Dictionary<int, Equities> equityDict;   // key tID, value equities including stk and etf
+        Dictionary<int, PairPos> pairPosDict;   // key, stkID, recording all positions in pair.
 
         #region Encap
-        public Dictionary<int, String> TickerSymbolDict
+        public Dictionary<int, Equities> EquityDict
         {
-            get { return tickerSymbolDict; }
-            set { tickerSymbolDict = value; }
+            get { return equityDict; }
+            set { equityDict = value; }
         }
         public Dictionary<int, PairPos> PairPosDict
         {
@@ -103,7 +107,8 @@ namespace HelloIBCSharp
                         tmpTickerID = tmpTickerID | (stkID << 1);
                         // digit from 10 to 13: etf ID
                         tmpTickerID = tmpTickerID | (etfID << 10);
-                        tickerSymbolDict.Add(tmpTickerID, cells[3]);
+                        Equities tmpEquity = new Equities(tmpTickerID, cells[3]);
+                        this.equityDict.Add(tmpTickerID, tmpEquity);
                     }
                 }
             }
@@ -120,11 +125,8 @@ namespace HelloIBCSharp
         }
         public PairPos createPair(PairSignal oneSignal)
         {
-            string etfSymbol = this.TickerSymbolDict[oneSignal.EtfTID];
-            string stkSymbol = this.TickerSymbolDict[oneSignal.StkTID];
-
-            Equities stkLeg = new Equities(oneSignal.StkTID, stkSymbol);
-            Equities etfLeg = new Equities(oneSignal.EtfTID, etfSymbol);
+            Equities etfLeg = this.equityDict[oneSignal.EtfTID];
+            Equities stkLeg = this.equityDict[oneSignal.StkTID];
 
             PairPos newPair = new PairPos(etfLeg, stkLeg);
             return newPair;
@@ -280,6 +282,21 @@ namespace HelloIBCSharp
             this.ClientSocket.placeOrder(etfOrder.OrderId, etfContract, etfOrder);
             this.ClientSocket.placeOrder(stkOrder.OrderId, stkContract, stkOrder);
             this.ClientSocket.reqIds(1);
+        }
+        //TODO
+        public void getAllQuote()
+        {
+            foreach (var oneEqu in this.equityDict.Values)
+            {
+                oneEqu.getQuoteYahoo();
+            }
+            // calculate uPNL for all pairs
+            //TODO
+            foreach (var onePair in this.pairPosDict.Values)
+            {
+                onePair.TotalUnrealizedPNL = onePair.StkLeg.UnrealizedPNL + onePair.EtfLeg.UnrealizedPNL;
+                onePair.calcUnPNL();    // calc unrealized PNL and stop loss
+            }
         }
         #endregion
 
