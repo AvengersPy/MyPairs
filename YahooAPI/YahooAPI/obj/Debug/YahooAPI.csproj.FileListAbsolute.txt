@@ -1,0 +1,9 @@
+c:\users\damian\documents\visual studio 2012\Projects\YahooAPI\YahooAPI\bin\Debug\YahooAPI.dll
+c:\users\damian\documents\visual studio 2012\Projects\YahooAPI\YahooAPI\bin\Debug\YahooAPI.pdb
+c:\users\damian\documents\visual studio 2012\Projects\YahooAPI\YahooAPI\obj\Debug\YahooAPI.dll
+c:\users\damian\documents\visual studio 2012\Projects\YahooAPI\YahooAPI\obj\Debug\YahooAPI.pdb
+C:\Users\zhe\Google Drive\My Projects\ViewTrade\YahooAPI\YahooAPI\bin\Debug\YahooAPI.dll
+C:\Users\zhe\Google Drive\My Projects\ViewTrade\YahooAPI\YahooAPI\bin\Debug\YahooAPI.pdb
+C:\Users\zhe\Google Drive\My Projects\ViewTrade\YahooAPI\YahooAPI\obj\Debug\YahooAPI.csprojResolveAssemblyReference.cache
+C:\Users\zhe\Google Drive\My Projects\ViewTrade\YahooAPI\YahooAPI\obj\Debug\YahooAPI.dll
+C:\Users\zhe\Google Drive\My Projects\ViewTrade\YahooAPI\YahooAPI\obj\Debug\YahooAPI.pdb

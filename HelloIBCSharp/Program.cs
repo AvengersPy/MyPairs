@@ -15,8 +15,8 @@ namespace HelloIBCSharp
         static void Main(string[] args)
         {
             //IB's main object
-            const string symbolFile = @"C:\Users\zhe\Dropbox\FE520 Proj\HelloIBCSharp\bin\ETFSymbol.csv";
-            const string quoteDir = @"C:\Users\Zhe\Dropbox\FE520 Proj\HelloIBCSharp\quotes\";
+            const string symbolFile = @"C:\Users\Zhe\Documents\GitHub\MyPairs\testSymbol.csv";
+            const string quoteDir = @"C:\Users\Zhe\Documents\GitHub\MyPairs\tmp_quotes";
             
             // TODO: remove this max quote to somewhere else
             const int maxQuote = 60;
@@ -27,7 +27,14 @@ namespace HelloIBCSharp
 
             #region Test Yahoo
             //Console.WriteLine(ibClient.PairPosDict[8].pairStkLeg.Symbol);
-            ibClient.PairPosDict[8].getPairQuote();
+            for (int i = 0; i < 10; i++)
+            {
+                if (i == 60)
+                {
+                    Console.ReadKey();
+                }
+                ibClient.getAllQuote();
+            }
             #endregion
 
             #region testProcessSignal

@@ -188,7 +188,8 @@ namespace HelloIBCSharp
         {
             foreach(var pairobj in this.PairPosDict)
             {
-                pairobj.Value.getPairQuote();
+                Console.WriteLine("Getting quote {0}", pairobj.Value.pairStkLeg.Symbol);
+                pairobj.Value.getStkQuote();
             }
         }
         // process signal generate by python algo and send order 
@@ -318,10 +319,6 @@ namespace HelloIBCSharp
             this.ClientSocket.placeOrder(stkOrder.OrderId, stkContract, stkOrder);
             this.ClientSocket.reqIds(1);
         }
-        #endregion
-
-        #region ActiveOrder Management
-
         #endregion
 
         //String etfDir, String stkDir

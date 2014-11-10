@@ -2,8 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Yahoo;
+
 using System.Text.RegularExpressions;   // replace multiple values in a string
+using Yahoo;
 
 namespace HelloIBCSharp
 {
@@ -46,7 +47,7 @@ namespace HelloIBCSharp
             this.pairEtfLeg.OpenOrderID = 0;
         }
 
-        const int TMP_QUOTE_SIZE = 9;   // for get quote and calculate average
+        const int TMP_QUOTE_SIZE = 5;   // for get quote and calculate average
         // restriction for Quote Data
         const int MAX_QUOTE_LIST = 60;
         // max opening period for one pair, one receiving of quote data is one period.
@@ -231,28 +232,24 @@ namespace HelloIBCSharp
         #endregion
 
         #region Get Quote Yahoo
-        public void getPairQuote()
+        public void getStkQuote()
         {
             // get quote
-            QuoteTick etfTick = this.parseQuoteStrYahoo(this.pairEtfLeg.Symbol);
-            this.etfQuoteLst.Add(etfTick);
             QuoteTick stkTick = this.parseQuoteStrYahoo(this.pairStkLeg.Symbol);
             this.stkQuoteLst.Add(stkTick);
 
             // max quote list
             // etfQuoteLst and stkQuoteLst should have same count
-            if (etfQuoteLst.Count != stkQuoteLst.Count)
-            {
-                throw new Exception("Quote counts are different in one pair!");
-            }
+//             if (etfQuoteLst.Count != stkQuoteLst.Count)
+//             {
+//                 throw new Exception("Quote counts are different in one pair!");
+//             }
+
             while (etfQuoteLst.Count > MAX_QUOTE_LIST)
             {
-                etfQuoteLst.RemoveAt(0);
                 stkQuoteLst.RemoveAt(0);
             }
-
             // stop loss
-
         }
         public double unrealizedPNL(QuoteTick lastQuote)
         {
