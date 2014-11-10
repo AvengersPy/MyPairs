@@ -62,11 +62,8 @@ namespace HelloIBCSharp
         // quote dict, private for PairPos
         // move this huge obj here for Stop Loss
         // and Max_Holding_Time
-
         List<QuoteTick> stkQuoteLst;
         List<QuoteTick> etfQuoteLst;
-        //private Dictionary<int, List<QuoteTick>> quoteDict;
-
 
         int currPeriod;         // how many periods since open this position. Cannot exceed the preset maximum period
         long openTime;
@@ -115,7 +112,7 @@ namespace HelloIBCSharp
             get { return pairAlpha; }
             set { pairAlpha = value; }
         }
-        public double[] Score
+        public double[] SScore
         {
             get { return sScore; }
             set { sScore = value; }
@@ -227,66 +224,6 @@ namespace HelloIBCSharp
                                      this.pairEtfLeg.CloseCommission + this.pairEtfLeg.OpenCommission;
                 }
             }
-        }
-        #endregion
-
-        #region Get Quote Yahoo
-        public void getPairQuote()
-        {
-            // get quote
-            QuoteTick etfTick = this.parseQuoteStrYahoo(this.pairEtfLeg.Symbol);
-            this.etfQuoteLst.Add(etfTick);
-            QuoteTick stkTick = this.parseQuoteStrYahoo(this.pairStkLeg.Symbol);
-            this.stkQuoteLst.Add(stkTick);
-
-            // max quote list
-            // etfQuoteLst and stkQuoteLst should have same count
-            if (etfQuoteLst.Count != stkQuoteLst.Count)
-            {
-                throw new Exception("Quote counts are different in one pair!");
-            }
-            while (etfQuoteLst.Count > MAX_QUOTE_LIST)
-            {
-                etfQuoteLst.RemoveAt(0);
-                stkQuoteLst.RemoveAt(0);
-            }
-
-            // stop loss
-
-        }
-        public double unrealizedPNL(QuoteTick lastQuote)
-        {
-
-            return 0;
-        }
-        private QuoteTick parseQuoteStrYahoo(string symbol)
-        {
-            // sorted by price, for calculate mean
-            List<QuoteTick> tmpQuoteLst = new List<QuoteTick>();
-            for (int i = 0; i < TMP_QUOTE_SIZE; i++)
-            {
-                string stkQuote = YahooAPI.getQuote(symbol);
-                stkQuote = Regex.Replace(stkQuote, "[\"]|[\r]|[\n]", "");
-                string[] entries = stkQuote.Replace("\r", "").Split(',');
-                
-                QuoteTick tmpQuote = new QuoteTick();
-                tmpQuote.QtTime = Convert.ToDateTime(entries[1]);   // why data magically appeared? TODO: figure it out after 12am someday
-                tmpQuote.QtLastPrice = Convert.ToDouble(entries[2]);
-                tmpQuote.QtLastSize = Convert.ToInt64(entries[3]);
-                tmpQuoteLst.Add(tmpQuote);
-            }
-            List<QuoteTick> SortedList = tmpQuoteLst.OrderBy(o => o.QtLastPrice).ToList();
-            // calculate average
-            double avgPrice = 0;
-            for (int i = 1; i < TMP_QUOTE_SIZE - 1; i++)
-            {
-                avgPrice += SortedList[i].QtLastPrice;
-            }
-            avgPrice /= TMP_QUOTE_SIZE - 2;
-            QuoteTick qtick = new QuoteTick();
-            qtick = tmpQuoteLst[TMP_QUOTE_SIZE - 1];
-            qtick.QtLastPrice = avgPrice;
-            return qtick;
         }
         #endregion
 

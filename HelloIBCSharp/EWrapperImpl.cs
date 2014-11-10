@@ -13,20 +13,39 @@ namespace HelloIBCSharp
     public class EWrapperImpl : EWrapper
     {
         EClientSocket clientSocket;
-        public EClientSocket ClientSocket
+        private int nextOrderId;
+
+        //String etfDir, String stkDir
+        public EWrapperImpl(string symbolFileDir, string quoteFolderDir, int maxQuote)
         {
-            get { return clientSocket; }
-            set { clientSocket = value; }
+            //this.MAX_QUOTE_LIST = maxQuote;
+            this.SYMBOL_FILE_DIR = symbolFileDir;
+            this.QUOTE_FOLDER_DIR = quoteFolderDir;
+
+            this.clientSocket = new EClientSocket(this);
+            this.tickerSymbolDict = new Dictionary<int, string>();
+            this.etfSymbolLst = new List<string>();
+
+            // quote dict has been moved
+            //this.quoteDict = new Dictionary<int, List<QuoteTick>>();
+
+            this.PairPosDict = new Dictionary<int, PairPos>();
+
+            MyLogger.Instance.Open("mylogger.txt", true);   // create/open logger file
+
+            this.CSVReader(SYMBOL_FILE_DIR);
+            this.CreatePairObjs();
+        }
+        public EWrapperImpl()   // two csv files containing idx symbol and stk symbol
+        {
+            Console.WriteLine("Missing symbol files in constructor");
+            Environment.Exit(-2);
+        }
+        ~EWrapperImpl()
+        {
+            MyLogger.Instance.Close();
         }
 
-        private int nextOrderId;
-        public int NextOrderId
-        {
-            get { return nextOrderId; }
-            set { nextOrderId = value; }
-        }
-        
-       
 
         #region Pairs Trading Object
         // symbol file
@@ -42,7 +61,26 @@ namespace HelloIBCSharp
         // will fix it later
         Dictionary<int, String> tickerSymbolDict;       // combined ticker symbol dict
         Dictionary<int, PairPos> pairPosDict;           // recording all positions in pair.
+        // TODO: This list is saving all etf, just a temporary solution
+        // Use another way to do it later.
+        List<string> etfSymbolLst;
 
+        #region Encap
+        public EClientSocket ClientSocket
+        {
+            get { return clientSocket; }
+            set { clientSocket = value; }
+        }
+        public int NextOrderId
+        {
+            get { return nextOrderId; }
+            set { nextOrderId = value; }
+        }
+        public List<string> EtfSymbolLst
+        {
+            get { return etfSymbolLst; }
+            set { etfSymbolLst = value; }
+        }
         public Dictionary<int, String> TickerSymbolDict
         {
             get { return tickerSymbolDict; }
@@ -53,6 +91,7 @@ namespace HelloIBCSharp
             get { return pairPosDict; }
             set { pairPosDict = value; }
         }
+        #endregion
         #endregion
 
         #region Pairs Trading Helper Functions
@@ -82,6 +121,7 @@ namespace HelloIBCSharp
                         if (stkID == 0)
                         {
                             tmpTickerID = tmpTickerID | 1;
+                            this.etfSymbolLst.Add(cells[3]);
                         }
                         // digit from 1 to 9: stk ID
                         tmpTickerID = tmpTickerID | (stkID << 1);
@@ -180,18 +220,6 @@ namespace HelloIBCSharp
                 this.PairPosDict.Add(KeyValuePair.Key, newPair);
             }
         }
-        // get quote for all pairs
-        // there will be multiple identical etf quotes. 
-        // however this is necessity for now
-        // maybe optimized later
-        public void getAllQuote()
-        {
-            foreach(var pairobj in this.PairPosDict)
-            {
-                pairobj.Value.getPairQuote();
-            }
-        }
-        // process signal generate by python algo and send order 
         public void processSignal(PairSignal oneSignal)
         {
             if (oneSignal.TrSignal == PairType.nullType)
@@ -324,36 +352,7 @@ namespace HelloIBCSharp
 
         #endregion
 
-        //String etfDir, String stkDir
-        public EWrapperImpl(string symbolFileDir, string quoteFolderDir, int maxQuote)
-        {
-            //this.MAX_QUOTE_LIST = maxQuote;
-            this.SYMBOL_FILE_DIR = symbolFileDir;
-            this.QUOTE_FOLDER_DIR = quoteFolderDir;
-
-            this.clientSocket = new EClientSocket(this);
-            this.tickerSymbolDict = new Dictionary<int, string>();
-            
-            // quote dict has been moved
-            //this.quoteDict = new Dictionary<int, List<QuoteTick>>();
-            
-            this.PairPosDict = new Dictionary<int, PairPos>();
-
-            MyLogger.Instance.Open("mylogger.txt", true);   // create/open logger file
-
-            this.CSVReader(SYMBOL_FILE_DIR);
-            this.CreatePairObjs();
-        }
-        public EWrapperImpl()   // two csv files containing idx symbol and stk symbol
-        {
-            Console.WriteLine("Missing symbol files in constructor");
-            Environment.Exit(-2);
-        }
-
-        ~EWrapperImpl()
-        {
-            MyLogger.Instance.Close();
-        }
+        
 
         #region EWrapper Methods
         public virtual void error(Exception e)

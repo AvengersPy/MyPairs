@@ -766,3 +766,45 @@
 
 10/30/2014 1:08:49 PM - CommissionReport. 00018037.545bf855.01.01 - 1 USD RPNL -2.053
 
+11/6/2014 9:35:55 AM - OpenOrder. ID: 54, CSCO, STK @ SMART: SELL, MKT 100, Submitted
+
+11/6/2014 9:35:55 AM - OrderStatus. Id: 54, Status: Submitted, Filled: 0, Remaining: 100, AvgFillPrice: 0, PermId: 1921284317, ParentId: 0, LastFillPrice: 0, ClientId: 0, WhyHeld: 
+
+11/6/2014 9:35:55 AM - ExecDetails. -1 - CSCO, STK, USD - 00004466.545b1927.01.01, 54, 100
+
+11/6/2014 9:35:55 AM - OpenOrder. ID: 54, CSCO, STK @ SMART: SELL, MKT 100, Filled
+
+11/6/2014 9:35:55 AM - OrderStatus. Id: 54, Status: Filled, Filled: 100, Remaining: 0, AvgFillPrice: 24.67, PermId: 1921284317, ParentId: 0, LastFillPrice: 24.67, ClientId: 0, WhyHeld: 
+
+11/6/2014 11:14:04 AM - OpenOrder. ID: 55, DIA, STK @ SMART: BUY, MKT 100, Submitted
+
+11/6/2014 11:14:04 AM - OrderStatus. Id: 55, Status: Submitted, Filled: 0, Remaining: 100, AvgFillPrice: 0, PermId: 1241226780, ParentId: 0, LastFillPrice: 0, ClientId: 0, WhyHeld: 
+
+11/6/2014 11:14:04 AM - ExecDetails. -1 - DIA, STK, USD - 00004466.545b1b90.01.01, 55, 100
+
+11/6/2014 11:14:04 AM - OpenOrder. ID: 55, DIA, STK @ SMART: BUY, MKT 100, Filled
+
+11/6/2014 11:14:04 AM - OrderStatus. Id: 55, Status: Filled, Filled: 100, Remaining: 0, AvgFillPrice: 173.74, PermId: 1241226780, ParentId: 0, LastFillPrice: 173.74, ClientId: 0, WhyHeld: 
+
+11/6/2014 11:14:04 AM - OpenOrder. ID: 56, CSCO, STK @ SMART: SELL, MKT 100, Submitted
+
+11/6/2014 11:14:04 AM - OrderStatus. Id: 56, Status: Submitted, Filled: 0, Remaining: 100, AvgFillPrice: 0, PermId: 1241226781, ParentId: 0, LastFillPrice: 0, ClientId: 0, WhyHeld: 
+
+11/6/2014 11:14:04 AM - ExecDetails. -1 - CSCO, STK, USD - 00004466.545b1b91.01.01, 56, 100
+
+11/6/2014 11:14:04 AM - OpenOrder. ID: 56, CSCO, STK @ SMART: SELL, MKT 100, Filled
+
+11/6/2014 11:14:04 AM - OrderStatus. Id: 56, Status: Filled, Filled: 100, Remaining: 0, AvgFillPrice: 24.68, PermId: 1241226781, ParentId: 0, LastFillPrice: 24.68, ClientId: 0, WhyHeld: 
+
+11/6/2014 11:14:04 AM - OpenOrder. ID: 55, DIA, STK @ SMART: BUY, MKT 100, Filled
+
+11/6/2014 11:14:04 AM - OrderStatus. Id: 55, Status: Filled, Filled: 100, Remaining: 0, AvgFillPrice: 173.74, PermId: 1241226780, ParentId: 0, LastFillPrice: 173.74, ClientId: 0, WhyHeld: 
+
+11/6/2014 11:14:04 AM - CommissionReport. 00004466.545b1b90.01.01 - 1 USD RPNL 1.79769313486232E+308
+
+11/6/2014 11:14:04 AM - OpenOrder. ID: 56, CSCO, STK @ SMART: SELL, MKT 100, Filled
+
+11/6/2014 11:14:04 AM - OrderStatus. Id: 56, Status: Filled, Filled: 100, Remaining: 0, AvgFillPrice: 24.68, PermId: 1241226781, ParentId: 0, LastFillPrice: 24.68, ClientId: 0, WhyHeld: 
+
+11/6/2014 11:14:04 AM - CommissionReport. 00004466.545b1b91.01.01 - 1 USD RPNL 1.79769313486232E+308
+
