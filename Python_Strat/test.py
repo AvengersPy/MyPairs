@@ -1,5 +1,5 @@
 import sys
-sys.path.append(r"C:\Users\zhe\Dropbox\FE520 Proj\ProjPythonScript\PyNet")
+sys.path.append(r"C:\Users\zhe\Documents\GitHub\MyPairs\Python_Strat\PyNet")
 
 import clr
 # IB Api Modules

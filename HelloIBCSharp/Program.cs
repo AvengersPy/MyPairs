@@ -27,6 +27,7 @@ namespace HelloIBCSharp
 
             #region Test Yahoo
             //Console.WriteLine(ibClient.PairPosDict[8].pairStkLeg.Symbol);
+<<<<<<< HEAD
             for (int i = 0; i < 10; i++)
             {
                 if (i == 60)
@@ -35,21 +36,24 @@ namespace HelloIBCSharp
                 }
                 ibClient.getAllQuote();
             }
+=======
+            //ibClient.PairPosDict[8].getPairQuote();
+>>>>>>> origin/master
             #endregion
 
             #region testProcessSignal
-            PairSignal tmpSignal = new PairSignal();
-            tmpSignal.StkTID = 8;   // CSCO
-            tmpSignal.EtfTID = 1;
-            tmpSignal.TrSignal = PairType.openLong;
-
-            ibClient.processSignal(tmpSignal);
-            Console.ReadKey();
-
-            tmpSignal.TrSignal = PairType.closeLong;
-            ibClient.processSignal(tmpSignal);
-
-            Console.ReadKey();
+//             PairSignal tmpSignal = new PairSignal();
+//             tmpSignal.StkTID = 8;   // CSCO
+//             tmpSignal.EtfTID = 1;
+//             tmpSignal.TrSignal = PairType.openLong;
+// 
+//             ibClient.processSignal(tmpSignal);
+//             Console.ReadKey();
+// 
+//             tmpSignal.TrSignal = PairType.closeLong;
+//             ibClient.processSignal(tmpSignal);
+// 
+//             Console.ReadKey();
             #endregion
 
 

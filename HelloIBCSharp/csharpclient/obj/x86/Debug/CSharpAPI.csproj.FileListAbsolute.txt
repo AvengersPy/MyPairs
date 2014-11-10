@@ -4,3 +4,8 @@ C:\Users\zhe\Dropbox\FE520 Proj\HelloIBCSharp\csharpclient\obj\x86\Debug\CSharpA
 C:\Users\zhe\Dropbox\FE520 Proj\HelloIBCSharp\csharpclient\obj\x86\Debug\TWSLib.dll
 C:\Users\zhe\Dropbox\FE520 Proj\HelloIBCSharp\csharpclient\obj\x86\Debug\TWSLib.pdb
 C:\Users\Zhe\Dropbox\FE520 Proj\HelloIBCSharp\csharpclient\bin\Debug\TWSLib.tlb
+C:\Users\zhe\Documents\GitHub\MyPairs\HelloIBCSharp\csharpclient\bin\Debug\TWSLib.dll
+C:\Users\zhe\Documents\GitHub\MyPairs\HelloIBCSharp\csharpclient\bin\Debug\TWSLib.pdb
+C:\Users\zhe\Documents\GitHub\MyPairs\HelloIBCSharp\csharpclient\obj\x86\Debug\CSharpAPI.csprojResolveAssemblyReference.cache
+C:\Users\zhe\Documents\GitHub\MyPairs\HelloIBCSharp\csharpclient\obj\x86\Debug\TWSLib.dll
+C:\Users\zhe\Documents\GitHub\MyPairs\HelloIBCSharp\csharpclient\obj\x86\Debug\TWSLib.pdb

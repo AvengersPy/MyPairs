@@ -63,11 +63,8 @@ namespace HelloIBCSharp
         // quote dict, private for PairPos
         // move this huge obj here for Stop Loss
         // and Max_Holding_Time
-
         List<QuoteTick> stkQuoteLst;
         List<QuoteTick> etfQuoteLst;
-        //private Dictionary<int, List<QuoteTick>> quoteDict;
-
 
         int currPeriod;         // how many periods since open this position. Cannot exceed the preset maximum period
         long openTime;
@@ -116,7 +113,7 @@ namespace HelloIBCSharp
             get { return pairAlpha; }
             set { pairAlpha = value; }
         }
-        public double[] Score
+        public double[] SScore
         {
             get { return sScore; }
             set { sScore = value; }
@@ -231,6 +228,7 @@ namespace HelloIBCSharp
         }
         #endregion
 
+<<<<<<< HEAD
         #region Get Quote Yahoo
         public void getStkQuote()
         {
@@ -287,6 +285,8 @@ namespace HelloIBCSharp
         }
         #endregion
 
+=======
+>>>>>>> origin/master
     }
     // PairPos contains one stk leg and one etf leg
     public class PairStk
