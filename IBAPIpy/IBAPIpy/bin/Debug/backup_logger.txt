@@ -1,0 +1,8 @@
+11/11/2014 5:08:22 PM - OpenOrder. ID: 51, CSCO, STK @ SMART: SELL, MKT 20, Inactive
+
+11/11/2014 5:08:22 PM - OrderStatus. Id: 51, Status: Inactive, Filled: 0, Remaining: 20, AvgFillPrice: 0, PermId: 2079161686, ParentId: 0, LastFillPrice: 0, ClientId: 0, WhyHeld: 
+
+11/11/2014 5:08:22 PM - OpenOrder. ID: 51, CSCO, STK @ SMART: SELL, MKT 20, Inactive
+
+11/11/2014 5:08:22 PM - OrderStatus. Id: 51, Status: Inactive, Filled: 0, Remaining: 20, AvgFillPrice: 0, PermId: 2079161686, ParentId: 0, LastFillPrice: 0, ClientId: 0, WhyHeld: 
+

@@ -6,8 +6,6 @@ using System.Linq;
 using System.Text;
 using System.IO;
 using IBApi;
-using MYLogger;
-using PairObj;
 
 namespace HelloIBCSharp
 {
@@ -45,7 +43,14 @@ namespace HelloIBCSharp
             this.clientSocket = new EClientSocket(this);
             this.equityDict = new Dictionary<int, Equities>();
             this.PairPosDict = new Dictionary<int, PairPos>();
-            File.Copy("mylogger.txt", "backup_logger.txt", true);
+            try
+            {
+                File.Copy("mylogger.txt", "backup_logger.txt", true);
+            }
+            catch (Exception)
+            {
+                Console.WriteLine("Skip backing up and created a new logger file");
+            }
             MyLogger.Instance.Open("mylogger.txt", false);   // create/open logger file
 
             this.readSymbols(SYMBOL_FILE_DIR);
@@ -53,7 +58,7 @@ namespace HelloIBCSharp
         ~EWrapperImpl()
         {
             //MyLogger.Instance.BackupAndClear("mylogger.txt");
-            MyLogger.Instance.Close();
+            //MyLogger.Instance.Close();
         }
         #endregion
 
@@ -260,7 +265,7 @@ namespace HelloIBCSharp
                     stkOrder.Action = "BUY";
                     stkOrder.TotalQuantity = Convert.ToInt32(tmpPair.InitEtfShare * tmpPair.PairBeta);
                     stkOrder.OrderType = "MKT";
-                    etfOrder.Action = "SSHORT";
+                    etfOrder.Action = "SELL";
                     etfOrder.TotalQuantity = tmpPair.InitEtfShare;
                     etfOrder.OrderType = "MKT";
                     break;

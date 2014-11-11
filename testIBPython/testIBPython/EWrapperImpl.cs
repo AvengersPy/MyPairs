@@ -12,69 +12,81 @@ namespace HelloIBCSharp
     public class EWrapperImpl : EWrapper
     {
         EClientSocket clientSocket;
+        private int nextOrderId;
         public EClientSocket ClientSocket
         {
             get { return clientSocket; }
             set { clientSocket = value; }
         }
-
-        private int nextOrderId;
         public int NextOrderId
         {
             get { return nextOrderId; }
             set { nextOrderId = value; }
         }
-        
-       
+
+        #region Constructor Singleton
+        private static EWrapperImpl instance;
+        public static EWrapperImpl Instance
+        {
+            get
+            {
+                if (instance == null)
+                {
+                    instance = new EWrapperImpl();
+                }
+                return instance;
+            }
+        }
+        private EWrapperImpl()
+        {
+            //this.MAX_QUOTE_LIST = maxQuote;
+            this.clientSocket = new EClientSocket(this);
+            this.equityDict = new Dictionary<int, Equities>();
+            this.PairPosDict = new Dictionary<int, PairPos>();
+            try
+            {
+                File.Copy("mylogger.txt", "backup_logger.txt", true);
+            }
+            catch (Exception)
+            {
+                Console.WriteLine("Skip backing up and created a new logger file");
+            }
+            MyLogger.Instance.Open("mylogger.txt", false);   // create/open logger file
+
+            this.readSymbols(SYMBOL_FILE_DIR);
+        }
+        ~EWrapperImpl()
+        {
+            //MyLogger.Instance.BackupAndClear("mylogger.txt");
+            //MyLogger.Instance.Close();
+        }
+        #endregion
 
         #region Pairs Trading Object
-        // restriction for Quote Data
-        int MAX_QUOTE_LIST = 0;
-        // max opening period for one pair, one receiving of quote data is one period.
-        // for example, if the trading frequency if hourly, receive quote every 11am, 12am, 1pm, 2pm, 3pm. 
-        // then there are 5 periods in a single day.
-        // for another example, if trading daily, then one day is one period
-        // in this situation, the MEAN REVERTING SPEED (aka Kappa) is a quite important filter.
-        int MAX_HOLDING_PERIOD = 20;
-        // symbol file
-        string SYMBOL_FILE_DIR = "";
-        // quote folder dir
-        string QUOTE_FOLDER_DIR = "";
-        // stock share for each pair
-        int STK_SHARE = 100;
+        const string SYMBOL_FILE_DIR = @"C:\Users\Zhe\Documents\GitHub\MyPairs\IBAPIpy\IBAPIpy\bin\dow.csv";    // symbol file
+        
+        Dictionary<int, Equities> equityDict;   // key tID, value equities including stk and etf
+        Dictionary<int, PairPos> pairPosDict;   // key, stkID, recording all positions in pair.
 
-
-        // Including three dictionaries: Symbol, Quote and Pair Position
-        // all three maps use the same key, which is unique to a stock symbol. Basically one symbol can only appear in one index
-        // will fix it later
-        Dictionary<int, String> tickerSymbolDict;       // combined ticker symbol dict
-        Dictionary<int, List<QuoteTick>> quoteDict;
-        Dictionary<int, PairPos> pairPosDict;           // recording all positions in pair.
-
-        public Dictionary<int, String> TickerSymbolDict
+        #region Encap
+        public Dictionary<int, Equities> EquityDict
         {
-            get { return tickerSymbolDict; }
-            set { tickerSymbolDict = value; }
-        }
-
-        public Dictionary<int, List<QuoteTick>> QuoteDict
-        {
-            get { return quoteDict; }
-            set { quoteDict = value; }
+            get { return equityDict; }
+            set { equityDict = value; }
         }
         public Dictionary<int, PairPos> PairPosDict
         {
             get { return pairPosDict; }
             set { pairPosDict = value; }
         }
-
+        #endregion
         #endregion
 
         #region Pairs Trading Helper Functions
         // read csv symbol to dictionary
         // the logic of this part is determined by the structure of the symbol file
         // etf: odd tickerID, stk: even tickerID
-        public void CSVReader(string csvDir)
+        public void readSymbols(string csvDir)
         {
             try
             {
@@ -102,8 +114,8 @@ namespace HelloIBCSharp
                         tmpTickerID = tmpTickerID | (stkID << 1);
                         // digit from 10 to 13: etf ID
                         tmpTickerID = tmpTickerID | (etfID << 10);
-
-                        tickerSymbolDict.Add(tmpTickerID, cells[3]);
+                        Equities tmpEquity = new Equities(tmpTickerID, cells[3]);
+                        this.equityDict.Add(tmpTickerID, tmpEquity);
                     }
                 }
             }
@@ -118,80 +130,39 @@ namespace HelloIBCSharp
                 throw (e);
             }
         }
-        // CSV writer for checking quotes
-        public void CSVWriter(int tickerID)
+        public PairPos createPair(PairSignal oneSignal)
         {
-            // create filename
-            string fileName = "";
-            try
-            {
-                fileName = string.Format("{0}{1}_{2}.csv", QUOTE_FOLDER_DIR, tickerID, TickerSymbolDict[tickerID]);
-            }
-            catch (Exception)
-            {
-                Console.WriteLine("No ticker ID: {0}", tickerID);
-                return;
-            }
+            Equities etfLeg = this.equityDict[oneSignal.EtfTID];
+            Equities stkLeg = this.equityDict[oneSignal.StkTID];
+
+            PairPos newPair = new PairPos(etfLeg, stkLeg);
+            return newPair;
             
-            
-            // delete the file if exists
-            if (File.Exists(fileName))
-            {
-                File.Delete(fileName);
-            }
+            // blah blah
+            //foreach (var KeyValuePair in this.TickerSymbolDict)
+            //{
+            //    // skip etf
+            //    if ((KeyValuePair.Key & 1) == 1)
+            //        continue;
 
-            try
-            {
-                using (FileStream fs = File.Create(fileName))
-                {
-                    // write title
-                    Byte[] title = new UTF8Encoding(true).GetBytes("Time, Price, Size\n");
-                    fs.Write(title, 0, title.Length);
+            //    PairPos newPair = new PairPos();
+            //    newPair.PairBeta = 0;   // beta initialize
 
-                    // write contents
-                    for (int i = 0; i < QuoteDict[tickerID].Count; i++)
-                    {
-                        QuoteTick tmpQtItm = QuoteDict[tickerID][i];
-                        string tmpStr = String.Format("{0},{1},{2}\n", tmpQtItm.QtTime, tmpQtItm.QtLastPrice, tmpQtItm.QtLastSize);
-                        Byte[] line = new UTF8Encoding(true).GetBytes(tmpStr);
-                        fs.Write(line, 0, line.Length);
-                    }
-                }
-            }
-            catch (Exception)
-            {
-                throw;
-            }
-        }
-        // go through the symbol dictionary, and fill out the PairPosition dictionary
-        public void CreatePairObjs()
-        {
-            this.PairPosDict.Clear();
+            //    int tmpEtfTID = (KeyValuePair.Key & 1024) + 1;      // clear all digits in 1 to 9. Aka, clear stk infomation
+            //    newPair.pairEtfLeg.TickerID = tmpEtfTID;
+            //    try
+            //    {
+            //        newPair.pairEtfLeg.Symbol = this.TickerSymbolDict[tmpEtfTID];
+            //    }
+            //    catch (Exception)
+            //    {
+            //        throw;
+            //    }
+            //    newPair.pairStkLeg.TickerID = KeyValuePair.Key;
+            //    newPair.pairStkLeg.Symbol = KeyValuePair.Value;
 
-            foreach (var KeyValuePair in this.TickerSymbolDict)
-            {
-                // skip etf
-                if ((KeyValuePair.Key & 1) == 1)
-                    continue;
-
-                PairPos newPair = new PairPos();
-                newPair.PairBeta = 0;   // beta initialize
-
-                int tmpEtfTID = (KeyValuePair.Key & 1024) + 1;      // clear all digits in 1 to 9. Aka, clear stk infomation
-                newPair.pairEtfLeg.TickerID = tmpEtfTID;
-                try
-                {
-                    newPair.pairEtfLeg.Symbol = this.TickerSymbolDict[tmpEtfTID];
-                }
-                catch (Exception)
-                {
-                    throw;
-                }
-                newPair.pairStkLeg.TickerID = KeyValuePair.Key;
-                newPair.pairStkLeg.Symbol = KeyValuePair.Value;
-
-                this.PairPosDict.Add(KeyValuePair.Key, newPair);
-            }
+            //    this.PairPosDict.Add(KeyValuePair.Key, newPair);
+            //}
         }
         public void processSignal(PairSignal oneSignal)
         {
@@ -199,31 +170,33 @@ namespace HelloIBCSharp
                 // do nothing
                 return;
 
+            if (!PairPosDict.ContainsKey(oneSignal.StkTID))
+            {
+                PairPos newPair = this.createPair(oneSignal);
+                PairPosDict.Add(oneSignal.StkTID, newPair);
+            }
+
             // retrieve Pair information from pair dict, based on this signal
             PairPos tmpPair = this.PairPosDict[oneSignal.StkTID];
             tmpPair.ThisPairStatus = oneSignal.TrSignal;
-
-
+            
             // TODO: remove this line later, this is just for test
             tmpPair.PairBeta = 1;
 
             if (tmpPair.PairBeta == 0)
             {
                 // the beta of this pair is zero, this pair hasn't be completely set up. exit application
-                Console.WriteLine("Please build the model first!, {0}, {1}", tmpPair.pairEtfLeg.Symbol, tmpPair.pairStkLeg.Symbol);
-                Console.WriteLine("Press any key to start over...");
-                Console.ReadKey();
-                Environment.Exit(-2);
+                throw new Exception("Please build your model first!");
             }
 
             // create contract objects for both stk and etf
             Contract etfContract = new Contract();
-            etfContract.Symbol = tmpPair.pairEtfLeg.Symbol;
+            etfContract.Symbol = tmpPair.EtfLeg.Symbol;
             etfContract.SecType = "STK";        // Both etf and stk are using the same security type, required by IB
             etfContract.Currency = "USD";
             etfContract.Exchange = "SMART";
             Contract stkContract = new Contract();
-            stkContract.Symbol = tmpPair.pairStkLeg.Symbol;
+            stkContract.Symbol = tmpPair.StkLeg.Symbol;
             stkContract.SecType = "STK";
             stkContract.Currency = "USD";
             stkContract.Exchange = "SMART";
@@ -240,14 +213,32 @@ namespace HelloIBCSharp
             switch (oneSignal.TrSignal)
             {
                 case PairType.openLong:
+                    tmpPair.ThisPairStatus = PairType.openLong;
+                    tmpPair.EtfLeg.OpenOrderID= this.nextOrderId;
+                    tmpPair.StkLeg.OpenOrderID = this.nextOrderId + 1;
+                    
+                    tmpPair.CurrHoldingPeriod = 0;  // open, holding period = 0
+                    break;
                 case PairType.openShort:
-                    tmpPair.pairEtfLeg.OpenOrderID= this.nextOrderId;
-                    tmpPair.pairStkLeg.OpenOrderID = this.nextOrderId + 1;
+                    tmpPair.ThisPairStatus = PairType.openShort;
+                    tmpPair.EtfLeg.OpenOrderID= this.nextOrderId;
+                    tmpPair.StkLeg.OpenOrderID = this.nextOrderId + 1;
+                    
+                    tmpPair.CurrHoldingPeriod = 0;
                     break;
                 case PairType.closeLong:
+                    tmpPair.ThisPairStatus = PairType.closeLong;
+                    tmpPair.EtfLeg.CloseOrderID = this.nextOrderId;
+                    tmpPair.StkLeg.CloseOrderID = this.nextOrderId + 1;
+
+                    tmpPair.CurrHoldingPeriod = -1; // close, holding period = -1
+                    break;
                 case PairType.closeShort:
-                    tmpPair.pairEtfLeg.CloseOrderID = this.nextOrderId;
-                    tmpPair.pairStkLeg.CloseOrderID = this.nextOrderId + 1;
+                    tmpPair.ThisPairStatus = PairType.closeShort;
+                    tmpPair.EtfLeg.CloseOrderID = this.nextOrderId;
+                    tmpPair.StkLeg.CloseOrderID = this.nextOrderId + 1;
+
+                    tmpPair.CurrHoldingPeriod = -1;
                     break;
                 default:
                     Console.WriteLine("Wrong signal type. Press any key to start over...");
@@ -263,81 +254,88 @@ namespace HelloIBCSharp
                 case PairType.openLong:
                     // long etf short stk
                     stkOrder.Action = "SELL";
-                    stkOrder.TotalQuantity = this.STK_SHARE;
+                    stkOrder.TotalQuantity = Convert.ToInt32(tmpPair.InitEtfShare * tmpPair.PairBeta);
                     stkOrder.OrderType = "MKT";
                     etfOrder.Action = "BUY";
-                    etfOrder.TotalQuantity = Convert.ToInt32(this.STK_SHARE * tmpPair.PairBeta);
+                    etfOrder.TotalQuantity = tmpPair.InitEtfShare;
                     etfOrder.OrderType = "MKT";
                     break;
                 case PairType.openShort:
                     // short etf long stk
                     stkOrder.Action = "BUY";
-                    stkOrder.TotalQuantity = this.STK_SHARE;
+                    stkOrder.TotalQuantity = Convert.ToInt32(tmpPair.InitEtfShare * tmpPair.PairBeta);
                     stkOrder.OrderType = "MKT";
-                    etfOrder.Action = "SSHORT";
-                    etfOrder.TotalQuantity = Convert.ToInt32(this.STK_SHARE * tmpPair.PairBeta);
+                    etfOrder.Action = "SELL";
+                    etfOrder.TotalQuantity = tmpPair.InitEtfShare;
                     etfOrder.OrderType = "MKT";
                     break;
                 case PairType.closeLong:
                     // close, sell etf buy cover stk
                     stkOrder.Action = "BUY";
-                    stkOrder.TotalQuantity = this.STK_SHARE;
+                    stkOrder.TotalQuantity = Convert.ToInt32(tmpPair.InitEtfShare * tmpPair.PairBeta);
                     stkOrder.OrderType = "MKT";
                     etfOrder.Action = "SELL";
-                    etfOrder.TotalQuantity = Convert.ToInt32(this.STK_SHARE * tmpPair.PairBeta);
+                    etfOrder.TotalQuantity = tmpPair.InitEtfShare;
                     etfOrder.OrderType = "MKT";
                     break;
                 case PairType.closeShort:
                     // close, buy cover etf sell stk
                     stkOrder.Action = "SELL";
-                    stkOrder.TotalQuantity = this.STK_SHARE;
+                    stkOrder.TotalQuantity = Convert.ToInt32(tmpPair.InitEtfShare * tmpPair.PairBeta);
                     stkOrder.OrderType = "MKT";
                     etfOrder.Action = "BUY";
-                    etfOrder.TotalQuantity = Convert.ToInt32(this.STK_SHARE * tmpPair.PairBeta);
+                    etfOrder.TotalQuantity = tmpPair.InitEtfShare;
                     etfOrder.OrderType = "MKT";
                     break;
                 default:
                     // not gonna happen
-                    Console.WriteLine("Wrong signal! Press any key to stop...");
-                    Console.ReadKey();
-                    Environment.Exit(-1);
+                    throw new Exception("Wrong signal!");
                     break;
             }
 
             // TODO: add log file here
-            Console.WriteLine("Order Placed!, {0} {1} {2} {3}", etfOrder.Action, etfContract.Symbol, stkOrder.Action, stkContract.Symbol);
             this.ClientSocket.placeOrder(etfOrder.OrderId, etfContract, etfOrder);
             this.ClientSocket.placeOrder(stkOrder.OrderId, stkContract, stkOrder);
             this.ClientSocket.reqIds(1);
         }
-        #endregion
-
-        #region ActiveOrder Management
-
-        #endregion
-
-        //String etfDir, String stkDir
-        public EWrapperImpl(string symbolFileDir, string quoteFolderDir, int maxQuote)
+        //TODO
+        public void getAllQuote()
         {
-            this.MAX_QUOTE_LIST = maxQuote;
-            this.SYMBOL_FILE_DIR = symbolFileDir;
-            this.QUOTE_FOLDER_DIR = quoteFolderDir;
+            foreach (var oneEqu in this.equityDict.Values)
+            {
+                oneEqu.getQuoteYahoo();
+            }
+            // calculate uPNL for all pairs
+            //TODO
+            foreach (var onePair in this.pairPosDict.Values)
+            {
+                onePair.TotalUnrealizedPNL = onePair.StkLeg.UnrealizedPNL + onePair.EtfLeg.UnrealizedPNL;
+                // check stop loss
+                if (onePair.exceedMaxLoss())
+                {
+                    Console.WriteLine("Stop Loss! {0}, {1}, {2}", onePair.StkLeg.Symbol, onePair.StkLeg.Symbol, onePair.TotalUnrealizedPNL);
+                    MyLogger.Instance.CreateEntry(String.Format("Stop Loss! {0}, {1}, {2}", onePair.StkLeg.Symbol, onePair.StkLeg.Symbol, onePair.TotalUnrealizedPNL));
+                    onePair.closeThisPosition();
+                }
 
-            this.clientSocket = new EClientSocket(this);
-            this.tickerSymbolDict = new Dictionary<int, string>();
-            this.quoteDict = new Dictionary<int, List<QuoteTick>>();
-            this.PairPosDict = new Dictionary<int, PairPos>();
+                // check max holding time
+                if (onePair.CurrHoldingPeriod == -1)
+                {
+                    // unopened pair position, no holding time
+                    continue;
+                }
 
-            this.CSVReader(SYMBOL_FILE_DIR);
-            this.CreatePairObjs();
+                onePair.CurrHoldingPeriod += 1;
+
+                if (onePair.exceedMaxHoldingTime())
+                {
+                    Console.WriteLine("Holding too long! {0}, {1}, {2}", onePair.StkLeg.Symbol, onePair.StkLeg.Symbol, onePair.TotalUnrealizedPNL);
+                    MyLogger.Instance.CreateEntry(String.Format("Holding too long! {0}, {1}, {2}", onePair.StkLeg.Symbol, onePair.StkLeg.Symbol, onePair.TotalUnrealizedPNL));
+                    onePair.closeThisPosition();
+                }
+            }
         }
-        public EWrapperImpl()   // two csv files containing idx symbol and stk symbol
-        {
-            Console.WriteLine("Missing symbol files in constructor");
-            Environment.Exit(-2);
-        }
-
-
+        #endregion
 
         #region EWrapper Methods
         public virtual void error(Exception e)
@@ -380,112 +378,117 @@ namespace HelloIBCSharp
 
         public virtual void tickPrice(int tickerId, int tickType, double price, int canAutoExecute)
         {
-            if (tickType == 4)     // field == 4, Last_Price
-            {
-                Console.WriteLine("Tick Price. Ticker Id:" + tickerId + ", tickType: " + tickType + ", Price: " + price + ", CanAutoExecute: " + canAutoExecute + "\n");
-
-                if (!this.QuoteDict.ContainsKey(tickerId))
-                {
-                    // if new tickerID...Error, new ticker id should be added during tickString already
-                    // tickPrice and tickSize should appear after tickString
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine("Ticker Price. Error: tickPrice received after tickString");
-                    Console.ResetColor();
-                    //Console.WriteLine("Enter any key to stop...");
-                    //Console.ReadKey();
-                    // ignore this data
-                    return;
-                }
-
-                // A "strange way" of modifying the last item in the list
-                int listCnt = QuoteDict[tickerId].Count;
-                QuoteTick tmpQtItm = QuoteDict[tickerId].LastOrDefault();
-                if (tmpQtItm.QtLastPrice!= 0)   // already received tickPrice
-                    return;
-                
-                tmpQtItm.QtLastPrice = price;
-                QuoteDict[tickerId].RemoveAt(listCnt - 1);
-                QuoteDict[tickerId].Add(tmpQtItm);
-            }
+            Console.WriteLine("Tick Price. Ticker Id:" + tickerId + ", tickType: " + tickType + ", Price: " + price + ", CanAutoExecute: " + canAutoExecute + "\n");
+//             if (tickType == 4)     // field == 4, Last_Price
+//             {
+//                 //MyLogger.Instance.CreateEntry(string.Format("Tick Price. Ticker Id:" + tickerId + ", tickType: " + tickType + ", Price: " + price + ", CanAutoExecute: " + canAutoExecute + "\n"));
+//                 Console.WriteLine("Tick Price. Ticker Id:" + tickerId + ", tickType: " + tickType + ", Price: " + price + ", CanAutoExecute: " + canAutoExecute + "\n");
+// 
+//                 if (!this.QuoteDict.ContainsKey(tickerId))
+//                 {
+//                     // if new tickerID...Error, new ticker id should be added during tickString already
+//                     // tickPrice and tickSize should appear after tickString
+//                     Console.ForegroundColor = ConsoleColor.Red;
+//                     Console.WriteLine("Ticker Price. Error: tickPrice received after tickString");
+//                     Console.ResetColor();
+//                     //Console.WriteLine("Enter any key to stop...");
+//                     //Console.ReadKey();
+//                     // ignore this data
+//                     return;
+//                 }
+// 
+//                 // A "strange way" of modifying the last item in the list
+//                 int listCnt = QuoteDict[tickerId].Count;
+//                 QuoteTick tmpQtItm = QuoteDict[tickerId].LastOrDefault();
+//                 if (tmpQtItm.QtLastPrice!= 0)   // already received tickPrice
+//                     return;
+//                 
+//                 tmpQtItm.QtLastPrice = price;
+//                 QuoteDict[tickerId].RemoveAt(listCnt - 1);
+//                 QuoteDict[tickerId].Add(tmpQtItm);
+//             }
         }
 
         public virtual void tickSize(int tickerId, int tickType, int size)
         {
-            if (tickType == 5)
-            {
-                Console.WriteLine("Tick Size. Ticker Id:" + tickerId + ", tickType: " + tickType + ", Size: " + size + "\n");
-                
-                if (!this.QuoteDict.ContainsKey(tickerId))
-                {
-                    // if new tickerID...Error, new ticker id should be added during tickString already
-                    // tickPrice and tickSize should appear after tickString
-
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine("Ticker Price. Error: tickPrice received after tickString");
-                    Console.ResetColor();
-                    //Console.WriteLine("Enter any key to stop...");
-                    //Console.ReadKey();
-                    // ignore this data
-                    return;
-                }
-
-                int listCnt = QuoteDict[tickerId].Count;
-                QuoteTick tmpQtItm = QuoteDict[tickerId].LastOrDefault();
-                if (tmpQtItm.QtLastSize != 0)   // already received tickSize
-                    return;
-
-                tmpQtItm.QtLastSize = size;     // actually we don't care about size in pairs trading
-                QuoteDict[tickerId].RemoveAt(listCnt - 1);
-                QuoteDict[tickerId].Add(tmpQtItm);
-            }
+            Console.WriteLine("Tick Size. Ticker Id:" + tickerId + ", tickType: " + tickType + ", Size: " + size + "\n");
+//          if (tickType == 5)
+//             {
+//                 //MyLogger.Instance.CreateEntry(string.Format("Tick Size. Ticker Id:" + tickerId + ", tickType: " + tickType + ", Size: " + size + "\n"));
+//                 Console.WriteLine("Tick Size. Ticker Id:" + tickerId + ", tickType: " + tickType + ", Size: " + size + "\n");
+//                 
+//                 if (!this.QuoteDict.ContainsKey(tickerId))
+//                 {
+//                     // if new tickerID...Error, new ticker id should be added during tickString already
+//                     // tickPrice and tickSize should appear after tickString
+// 
+//                     Console.ForegroundColor = ConsoleColor.Red;
+//                     Console.WriteLine("Ticker Price. Error: tickPrice received after tickString");
+//                     Console.ResetColor();
+//                     //Console.WriteLine("Enter any key to stop...");
+//                     //Console.ReadKey();
+//                     // ignore this data
+//                     return;
+//                 }
+// 
+//                 int listCnt = QuoteDict[tickerId].Count;
+//                 QuoteTick tmpQtItm = QuoteDict[tickerId].LastOrDefault();
+//                 if (tmpQtItm.QtLastSize != 0)   // already received tickSize
+//                     return;
+// 
+//                 tmpQtItm.QtLastSize = size;     // actually we don't care about size in pairs trading
+//                 QuoteDict[tickerId].RemoveAt(listCnt - 1);
+//                 QuoteDict[tickerId].Add(tmpQtItm);
+//             }
         }
 
         public virtual void tickString(int tickerId, int tickType, string value)
         {
             long tmpTime = Convert.ToInt64(value);
             DateTime tickTime = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddSeconds(tmpTime).ToLocalTime();
+            //MyLogger.Instance.CreateEntry("Tick string. Ticker Id:" + tickerId + ", Type: " + tickType + ", Value: " + tickTime + "\n");
             Console.WriteLine("Tick string. Ticker Id:" + tickerId + ", Type: " + tickType + ", Value: " + tickTime + "\n");
             
-            if (tickType != 45)
-            {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("Tick string. TICKTYPE NOT 45! Type: {0}", tickType);
-                Console.ResetColor();
-            }
-
-
-            if (!QuoteDict.ContainsKey(tickerId))
-            {
-                // if new tID, add new element to QuoteDict
-                List<QuoteTick> tmpList = new List<QuoteTick>();
-                QuoteTick tmpQt = new QuoteTick();
-                tmpQt.QtTime = tickTime;
-                tmpList.Add(tmpQt);
-
-                QuoteDict.Add(tickerId, tmpList);
-            }
-            else
-            {
-                // if existing tID, add one more element to the QuoteList
-                // before adding, check if the previous quote in QtList is complete or not
-                QuoteTick tmpQtItm = QuoteDict[tickerId].LastOrDefault();
-                if (tmpQtItm.QtLastPrice == 0 | tmpQtItm.QtLastSize == 0)
-                {
-                    int listCnt = QuoteDict[tickerId].Count;
-                    QuoteDict[tickerId].RemoveAt(listCnt - 1);
-                }
-
-                QuoteTick tmpQt = new QuoteTick();
-                tmpQt.QtTime = tickTime;
-
-                QuoteDict[tickerId].Add(tmpQt);
-
-                while (QuoteDict[tickerId].Count > MAX_QUOTE_LIST)
-                {
-                    // Remove the first element if recorded too many quotes
-                    QuoteDict[tickerId].RemoveAt(0);
-                }
-            }
+//             if (tickType != 45)
+//             {
+//                 Console.ForegroundColor = ConsoleColor.Red;
+//                 Console.WriteLine("Tick string. TICKTYPE NOT 45! Type: {0}", tickType);
+//                 Console.ResetColor();
+//             }
+// 
+// 
+//             if (!QuoteDict.ContainsKey(tickerId))
+//             {
+//                 // if new tID, add new element to QuoteDict
+//                 List<QuoteTick> tmpList = new List<QuoteTick>();
+//                 QuoteTick tmpQt = new QuoteTick();
+//                 tmpQt.QtTime = tickTime;
+//                 tmpList.Add(tmpQt);
+// 
+//                 QuoteDict.Add(tickerId, tmpList);
+//             }
+//             else
+//             {
+//                 // if existing tID, add one more element to the QuoteList
+//                 // before adding, check if the previous quote in QtList is complete or not
+//                 QuoteTick tmpQtItm = QuoteDict[tickerId].LastOrDefault();
+//                 if (tmpQtItm.QtLastPrice == 0 | tmpQtItm.QtLastSize == 0)
+//                 {
+//                     int listCnt = QuoteDict[tickerId].Count;
+//                     QuoteDict[tickerId].RemoveAt(listCnt - 1);
+//                 }
+// 
+//                 QuoteTick tmpQt = new QuoteTick();
+//                 tmpQt.QtTime = tickTime;
+// 
+//                 QuoteDict[tickerId].Add(tmpQt);
+// 
+//                 while (QuoteDict[tickerId].Count > MAX_QUOTE_LIST)
+//                 {
+//                     // Remove the first element if recorded too many quotes
+//                     QuoteDict[tickerId].RemoveAt(0);
+//                 }
+//             }
         }
 
         public virtual void tickGeneric(int tickerId, int field, double value)
@@ -550,7 +553,12 @@ namespace HelloIBCSharp
                                         int permId, int parentId, double lastFillPrice, int clientId, string whyHeld)
         {
             Console.WriteLine("OrderStatus. Id: " + orderId + ", Status: " + status + ", Filled: " + filled + ", Remaining: " + remaining
-                + ", AvgFillPrice: " + avgFillPrice + ", PermId: " + permId + ", ParentId: " + parentId + ", LastFillPrice: " + lastFillPrice + ", ClientId: " + clientId + ", WhyHeld: " + whyHeld + "\n");
+                + ", AvgFillPrice: " + avgFillPrice + ", PermId: " + permId + ", ParentId: " + parentId + ", LastFillPrice: " + lastFillPrice 
+                + ", ClientId: " + clientId + ", WhyHeld: " + whyHeld + "\n");
+            MyLogger.Instance.CreateEntry(string.Format("OrderStatus. Id: " + orderId + ", Status: " + status + ", Filled: " + filled + ", Remaining: " + remaining
+                + ", AvgFillPrice: " + avgFillPrice + ", PermId: " + permId + ", ParentId: " + parentId + ", LastFillPrice: " + lastFillPrice
+                + ", ClientId: " + clientId + ", WhyHeld: " + whyHeld + "\n"));
+
 
             if (remaining != 0)
                 return;     // if this order not filled, do nothing
@@ -564,6 +572,7 @@ namespace HelloIBCSharp
 
         public virtual void openOrder(int orderId, Contract contract, Order order, OrderState orderState)
         {
+            MyLogger.Instance.CreateEntry("OpenOrder. ID: " + orderId + ", " + contract.Symbol + ", " + contract.SecType + " @ " + contract.Exchange + ": " + order.Action + ", " + order.OrderType + " " + order.TotalQuantity + ", " + orderState.Status + "\n");
             Console.WriteLine("OpenOrder. ID: " + orderId + ", " + contract.Symbol + ", " + contract.SecType + " @ " + contract.Exchange + ": " + order.Action + ", " + order.OrderType + " " + order.TotalQuantity + ", " + orderState.Status + "\n");
         }
 
@@ -587,6 +596,9 @@ namespace HelloIBCSharp
             Console.WriteLine("ExecDetails. " + reqId + " - " 
                                + contract.Symbol + ", " + contract.SecType + ", " + contract.Currency + " - " 
                                + execution.ExecId + ", " + execution.OrderId + ", " + execution.Shares + "\n");
+            MyLogger.Instance.CreateEntry("ExecDetails. " + reqId + " - "
+                               + contract.Symbol + ", " + contract.SecType + ", " + contract.Currency + " - "
+                               + execution.ExecId + ", " + execution.OrderId + ", " + execution.Shares + "\n");
 
             foreach (var tmpPosPair in PairPosDict.Values)
             {
@@ -602,13 +614,12 @@ namespace HelloIBCSharp
 
         public virtual void commissionReport(CommissionReport commissionReport)
         {
-            
-            
+            MyLogger.Instance.CreateEntry("CommissionReport. " + commissionReport.ExecId + " - " + commissionReport.Commission + " " + commissionReport.Currency + " RPNL " + commissionReport.RealizedPNL + "\n");
             Console.WriteLine("CommissionReport. " + commissionReport.ExecId + " - " + commissionReport.Commission + " " + commissionReport.Currency + " RPNL " + commissionReport.RealizedPNL + "\n");
             foreach (var tmpPosPair in PairPosDict.Values)
             {
                 // save price and share to PosPair obj
-                tmpPosPair.saveComm(commissionReport.ExecId, commissionReport.Commission);
+                tmpPosPair.saveCommPNL(commissionReport.ExecId, commissionReport.Commission, commissionReport.RealizedPNL);
             }
         }
 
@@ -706,5 +717,53 @@ namespace HelloIBCSharp
             Console.WriteLine("displayGroupUpdated. Request: " + reqId + ", ContractInfo: " + contractInfo);
         }
         #endregion
+
+        // quoteDict has been moved to PairPos Dict
+        // CSV writer for checking quotes
+        //         public void CSVWriter(int tickerID)
+        //         {
+        //             // create filename
+        //             string fileName = "";
+        //             try
+        //             {
+        //                 fileName = string.Format("{0}{1}_{2}.csv", QUOTE_FOLDER_DIR, tickerID, TickerSymbolDict[tickerID]);
+        //             }
+        //             catch (Exception)
+        //             {
+        //                 Console.WriteLine("No ticker ID: {0}", tickerID);
+        //                 return;
+        //             }
+        //             
+        //             
+        //             // delete the file if exists
+        //             if (File.Exists(fileName))
+        //             {
+        //                 File.Delete(fileName);
+        //             }
+        // 
+        //             try
+        //             {
+        //                 using (FileStream fs = File.Create(fileName))
+        //                 {
+        //                     // write title
+        //                     Byte[] title = new UTF8Encoding(true).GetBytes("Time, Price, Size\n");
+        //                     fs.Write(title, 0, title.Length);
+        // 
+        //                     // write contents
+        //                     for (int i = 0; i < QuoteDict[tickerID].Count; i++)
+        //                     {
+        //                         QuoteTick tmpQtItm = QuoteDict[tickerID][i];
+        //                         string tmpStr = String.Format("{0},{1},{2}\n", tmpQtItm.QtTime, tmpQtItm.QtLastPrice, tmpQtItm.QtLastSize);
+        //                         Byte[] line = new UTF8Encoding(true).GetBytes(tmpStr);
+        //                         fs.Write(line, 0, line.Length);
+        //                     }
+        //                 }
+        //             }
+        //             catch (Exception)
+        //             {
+        //                 throw;
+        //             }
+        //         }
+        // go through the symbol dictionary, and fill out the PairPosition dictionary
     }
 }

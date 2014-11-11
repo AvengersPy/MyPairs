@@ -6,9 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using IBApi;
-using MYLogger;
 using Yahoo;
-using PairObj;
 
 namespace HelloIBCSharp
 {
@@ -21,17 +19,38 @@ namespace HelloIBCSharp
             EWrapperImpl.Instance.ClientSocket.eConnect("127.0.0.1", 7496, 0);
             Thread.Sleep(2000);
 
-            EWrapperImpl.Instance.getAllQuote();
+            #region test
+            Contract contract = new Contract();
+            contract.Symbol = "DIA";
+            contract.SecType = "STK";
+            contract.Currency = "USD";
+            contract.Exchange = "SMART";
+
+            Order tmpOrder = new Order();
+            //tmpOrder.ClientId = 0;
+            tmpOrder.OrderId = EWrapperImpl.Instance.NextOrderId;
+            tmpOrder.Action = "SELL";
+            tmpOrder.TotalQuantity = 20;
+            tmpOrder.OrderType = "MKT";
+
+            EWrapperImpl.Instance.ClientSocket.placeOrder(EWrapperImpl.Instance.NextOrderId, contract, tmpOrder);
+            Console.ReadKey();
+            #endregion
+
+
+
+
+            //EWrapperImpl.Instance.getAllQuote();
 
             PairSignal tmpSignal = new PairSignal();
             tmpSignal.StkTID = 8;   // CSCO
             tmpSignal.EtfTID = 1;
-            tmpSignal.TrSignal = PairType.openLong;
+            tmpSignal.TrSignal = PairType.openShort;
 
-            //ibClient.processSignal(tmpSignal);
+            EWrapperImpl.Instance.processSignal(tmpSignal);
             Console.ReadKey();
 
-            EWrapperImpl.Instance.getAllQuote();
+            //EWrapperImpl.Instance.getAllQuote();
 
             tmpSignal.TrSignal = PairType.closeLong;
             EWrapperImpl.Instance.processSignal(tmpSignal);
