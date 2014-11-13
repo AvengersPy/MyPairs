@@ -1,9 +1,13 @@
-import csv
 import os
+os.chdir(r"C:\Users\zhe\Documents\GitHub\MyPairs\Simulation\data")
 
-os.chdir(dir)
+from regression_overload import *
 
-with open("test.csv", 'rb') as csvfile:
-	spamreader = csv.reader(csvfile, delimiter=',', quotechar='|')
-	for row in spamreader:
-		print ', '.join(row)
+x, y = readCSV()
+print x
+print y
+
+beta0, beta1, epsilon = regression(x, y)
+print beta0
+print beta1
+print epsilon
