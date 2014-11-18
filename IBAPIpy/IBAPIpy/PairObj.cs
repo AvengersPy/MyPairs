@@ -94,7 +94,7 @@ namespace HelloIBCSharp
     {
         public Equities()
         {
-            throw new Exception("Missing Symbol and/or Ticker ID when createing equity obj!");
+            throw new Exception("Missing Symbol and/or Ticker ID when creating equity obj!");
         }
         public Equities(int _tickerID, string _symbol)
         {

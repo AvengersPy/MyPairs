@@ -30,24 +30,50 @@ from System.Threading.Tasks import *
 from System.Text.RegularExpressions import *   # replace multiple values in a string
 
 
-### how to use logger
+### ============================ how to use logger ============================ 
 # MyLogger.Instance.Open(r"C:\Users\Zhe\Documents\GitHub\MyPairs\Python_Strat\Logger\mylogger.txt", False)
 # MyLogger.Instance.CreateEntry("Test")
 
-### Connect
+###  ============================ Connect ============================ 
 EWrapperImpl.Instance.ClientSocket.eConnect("127.0.0.1", 7496, 0);
-Thread.Sleep(1000)
+Thread.Sleep(1500)
 #Console.Read()
 
-### Create Signal
-tmpSignal = PairSignal()
-tmpSignal.StkTID = 8;   # CSCO
-tmpSignal.EtfTID = 1;
-tmpSignal.TrSignal = PairType.openLong;
+###  ============================  Create Signal  ============================ 
+# tmpSignal = PairSignal()
+# tmpSignal.StkTID = 8;   # CSCO
+# tmpSignal.EtfTID = 1;
 
-EWrapperImpl.Instance.processSignal(tmpSignal);
-Thread.Sleep(10000)
+# tmpSignal.TrSignal = PairType.openLong;	
+# EWrapperImpl.Instance.processSignal(tmpSignal);
+# Console.Read()
 
-# EWrapperImpl.Instance.getAllQuote();
+# tmpSignal.TrSignal = PairType.closeLong;
+# EWrapperImpl.Instance.processSignal(tmpSignal);
+# Console.Read()
+
+# tmpSignal.TrSignal = PairType.openShort;
+# EWrapperImpl.Instance.processSignal(tmpSignal);
+# Console.Read()
+
+# tmpSignal.TrSignal = PairType.closeShort;
+# EWrapperImpl.Instance.processSignal(tmpSignal);
+# Console.Read()
+
+
+### ============================ self close for a pair  ============================ 
+# tmpSignal = PairSignal()
+# tmpSignal.StkTID = 8;   # CSCO
+# tmpSignal.EtfTID = 1;
+
+# tmpSignal.TrSignal = PairType.openLong;	
+# EWrapperImpl.Instance.processSignal(tmpSignal);
+# Console.Read()
+
+# tmpPair = EWrapperImpl.Instance.PairPosDict[tmpSignal.StkTID]
+# tmpPair.closeThisPosition()
+
 # EWrapperImpl.Instance.getAllQuote()
-# Console.WriteLine("HH")
+# EWrapperImpl.Instance.getAllQuote()
+Thread.Sleep(10000)
+Console.WriteLine("The End")

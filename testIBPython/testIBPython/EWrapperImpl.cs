@@ -178,7 +178,7 @@ namespace HelloIBCSharp
 
             // retrieve Pair information from pair dict, based on this signal
             PairPos tmpPair = this.PairPosDict[oneSignal.StkTID];
-            tmpPair.ThisPairStatus = oneSignal.TrSignal;
+            //tmpPair.ThisPairStatus = oneSignal.TrSignal;
             
             // TODO: remove this line later, this is just for test
             tmpPair.PairBeta = 1;
@@ -213,13 +213,23 @@ namespace HelloIBCSharp
             switch (oneSignal.TrSignal)
             {
                 case PairType.openLong:
+                    if (tmpPair.ThisPairStatus == PairType.openLong | tmpPair.ThisPairStatus == PairType.openShort)
+                    {
+                        throw new Exception(string.Format("Pair {0} and {1} already open, cannot open again!", tmpPair.EtfLeg.Symbol, tmpPair.StkLeg.Symbol));
+                    }
+
                     tmpPair.ThisPairStatus = PairType.openLong;
                     tmpPair.EtfLeg.OpenOrderID= this.nextOrderId;
                     tmpPair.StkLeg.OpenOrderID = this.nextOrderId + 1;
-                    
+
                     tmpPair.CurrHoldingPeriod = 0;  // open, holding period = 0
                     break;
                 case PairType.openShort:
+                    if (tmpPair.ThisPairStatus == PairType.openLong | tmpPair.ThisPairStatus == PairType.openShort)
+                    {
+                        throw new Exception(string.Format("Pair {0} and {1} already open, cannot open again!", tmpPair.EtfLeg.Symbol, tmpPair.StkLeg.Symbol));
+                    }
+
                     tmpPair.ThisPairStatus = PairType.openShort;
                     tmpPair.EtfLeg.OpenOrderID= this.nextOrderId;
                     tmpPair.StkLeg.OpenOrderID = this.nextOrderId + 1;
@@ -227,6 +237,11 @@ namespace HelloIBCSharp
                     tmpPair.CurrHoldingPeriod = 0;
                     break;
                 case PairType.closeLong:
+                    if (tmpPair.ThisPairStatus == PairType.closeLong | tmpPair.ThisPairStatus == PairType.closeShort | tmpPair.ThisPairStatus == PairType.nullType)
+                    {
+                        throw new Exception(string.Format("Pair {0} and {1} not opened, cannot close!", tmpPair.EtfLeg.Symbol, tmpPair.StkLeg.Symbol));
+                    }
+
                     tmpPair.ThisPairStatus = PairType.closeLong;
                     tmpPair.EtfLeg.CloseOrderID = this.nextOrderId;
                     tmpPair.StkLeg.CloseOrderID = this.nextOrderId + 1;
@@ -234,6 +249,11 @@ namespace HelloIBCSharp
                     tmpPair.CurrHoldingPeriod = -1; // close, holding period = -1
                     break;
                 case PairType.closeShort:
+                    if (tmpPair.ThisPairStatus == PairType.closeLong | tmpPair.ThisPairStatus == PairType.closeShort | tmpPair.ThisPairStatus == PairType.nullType)
+                    {
+                        throw new Exception(string.Format("Pair {0} and {1} not opened, cannot close!", tmpPair.EtfLeg.Symbol, tmpPair.StkLeg.Symbol));
+                    }
+
                     tmpPair.ThisPairStatus = PairType.closeShort;
                     tmpPair.EtfLeg.CloseOrderID = this.nextOrderId;
                     tmpPair.StkLeg.CloseOrderID = this.nextOrderId + 1;
@@ -241,10 +261,8 @@ namespace HelloIBCSharp
                     tmpPair.CurrHoldingPeriod = -1;
                     break;
                 default:
-                    Console.WriteLine("Wrong signal type. Press any key to start over...");
-                    Console.ReadKey();
-                    Environment.Exit(-2);
-                    break;
+                    throw new Exception("Wrong signal type. Press any key to start over...");
+
             }
 
             this.PairPosDict[oneSignal.StkTID] = tmpPair;

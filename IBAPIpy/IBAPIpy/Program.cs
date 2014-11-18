@@ -20,42 +20,54 @@ namespace HelloIBCSharp
             Thread.Sleep(2000);
 
             #region test
-            Contract contract = new Contract();
-            contract.Symbol = "DIA";
-            contract.SecType = "STK";
-            contract.Currency = "USD";
-            contract.Exchange = "SMART";
-
-            Order tmpOrder = new Order();
-            //tmpOrder.ClientId = 0;
-            tmpOrder.OrderId = EWrapperImpl.Instance.NextOrderId;
-            tmpOrder.Action = "SELL";
-            tmpOrder.TotalQuantity = 20;
-            tmpOrder.OrderType = "MKT";
-
-            EWrapperImpl.Instance.ClientSocket.placeOrder(EWrapperImpl.Instance.NextOrderId, contract, tmpOrder);
-            Console.ReadKey();
+//             Contract contract = new Contract();
+//             contract.Symbol = "DIA";
+//             contract.SecType = "STK";
+//             contract.Currency = "USD";
+//             contract.Exchange = "SMART";
+// 
+//             Order tmpOrder = new Order();
+//             //tmpOrder.ClientId = 0;
+//             tmpOrder.OrderId = EWrapperImpl.Instance.NextOrderId;
+//             tmpOrder.Action = "SELL";
+//             tmpOrder.TotalQuantity = 20;
+//             tmpOrder.OrderType = "MKT";
+// 
+//             EWrapperImpl.Instance.ClientSocket.placeOrder(EWrapperImpl.Instance.NextOrderId, contract, tmpOrder);
+//             Console.ReadKey();
             #endregion
-
-
-
 
             //EWrapperImpl.Instance.getAllQuote();
 
+//             PairSignal tmpSignal = new PairSignal();
+//             tmpSignal.StkTID = 8;   // CSCO
+//             tmpSignal.EtfTID = 1;
+//             tmpSignal.TrSignal = PairType.openLong;
+// 
+//             EWrapperImpl.Instance.processSignal(tmpSignal);
+//             Console.ReadKey();
+// 
+//             //EWrapperImpl.Instance.getAllQuote();
+// 
+//             tmpSignal.TrSignal = PairType.closeLong;
+//             EWrapperImpl.Instance.processSignal(tmpSignal);
+//             
+//             Console.ReadKey();
+
+
+            // self close
             PairSignal tmpSignal = new PairSignal();
             tmpSignal.StkTID = 8;   // CSCO
             tmpSignal.EtfTID = 1;
-            tmpSignal.TrSignal = PairType.openShort;
+            tmpSignal.TrSignal = PairType.openLong;
 
             EWrapperImpl.Instance.processSignal(tmpSignal);
             Console.ReadKey();
 
-            //EWrapperImpl.Instance.getAllQuote();
+            PairPos tmpPair = EWrapperImpl.Instance.PairPosDict[tmpSignal.StkTID];
+            tmpPair.closeThisPosition();
 
-            tmpSignal.TrSignal = PairType.closeLong;
-            EWrapperImpl.Instance.processSignal(tmpSignal);
-            
-            Console.ReadKey();
+
 
             #region request market data IB
             //Create and define a contract to fetch data for
