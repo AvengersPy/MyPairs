@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 
 def readCSV():
-	os.chdir(r'C:\Users\zhe\Documents\GitHub\MyPairs\Simulation\data')
+	os.chdir(r'/Users/yubing/MyPairs/Simulation/data')
 	data1 = pd.read_csv('spy.csv')# pandas dataframe
 	data2 = pd.read_csv('csco.csv')
 	ETFlist = list(data1['Adj Close'])		# convert to list, you now calculate return and do the regression
