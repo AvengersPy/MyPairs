@@ -65,9 +65,11 @@ def score(Epsilon, ptime):
 
 	for i in range(0, ptime):
 		s.append((Epsilon[i]-m)/sigmaeq)
-		smod.append(s[i] - a/k*sigmaeq)
+		smod.append(s[i] - a/(k*sigmaeq))
 
-	return s
+	print m
+
+	return smod
 
 # beta0 = 0.000194054
 # beta = 0.840379173
@@ -89,15 +91,16 @@ def score(Epsilon, ptime):
 # 140.08,141.1,143.48,143.28,143.5,143.12,142.14,142.54]
 spy_data, mmm_data = readCSV()
 
-PTime = 100
+PTime = 477
 
-spyRtn = np.log(spy_data[1:PTime]) - np.log(spy_data[0:PTime-1])
-mmmRtn = np.log(mmm_data[1:PTime]) - np.log(mmm_data[0:PTime-1])
+spyRtn = np.log(spy_data[1:PTime+1]) - np.log(spy_data[0:PTime])
+mmmRtn = np.log(mmm_data[1:PTime+1]) - np.log(mmm_data[0:PTime])
 
 beta0, beta1, epsilon = regression(spyRtn, mmmRtn)
 #print spy_data
 sscore = score(epsilon, PTime)
 print sscore
 plt.plot(range(0,len(sscore)),sscore)
-plt.axis([0,len(sscore),min(sscore)*1.2,max(sscore)*1.2])
+#plt.axis([0,len(sscore),min(sscore)*1.2,max(sscore)*1.2])
+plt.axis([0,PTime,-0.3,0.3])
 plt.show()
