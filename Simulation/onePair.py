@@ -6,25 +6,33 @@ from scipy import stats
 import matplotlib.pyplot as plt
 
 
-
-
-def regression(listETF, listSTK):
-	gradient, intercept, r_value, p_value, std_err = stats.linregress(listETF, listSTK)
-	n = len(listETF)
-	residure = []
-	for i in xrange(0, n):
-		x = float(listSTK[i] - gradient * listETF[i] - intercept)
-		residure.append(x)
-	return intercept, gradient, residure
-
 def readCSV():
-	os.chdir(r'/Users/yubing/MyPairs/Simulation/data')
+	os.chdir(r'C:\Users\zhe\Documents\GitHub\MyPairs\Simulation\data')
 	data1 = pd.read_csv('spy.csv')# pandas dataframe
 	data2 = pd.read_csv('csco.csv')
 	ETFlist = list(data1['Adj Close'])		# convert to list, you now calculate return and do the regression
 	STKlist = list(data2['Adj Close'])
 	return ETFlist, STKlist
-	
+
+
+
+
+def regression(listETF, listSTK, pTime):
+	etfRtn =  np.log(listETF[1:pTime+1]) - np.log(listETF[0:pTime])
+	stkRtn = np.log(listSTK[1:pTime+1]) - np.log(listSTK[0:pTime])
+
+	gradient, intercept, r_value, p_value, std_err = stats.linregress(etfRtn, stkRtn)
+	n = len(etfRtn)
+	residual = []
+	for i in xrange(0, n):
+		x = float(stkRtn[i] - gradient * etfRtn[i] - intercept)
+		residual.append(x)
+
+	return intercept, gradient, residual
+
+
+
+
 def score(Epsilon, ptime):
 	
 	if ptime >= len(Epsilon):
@@ -89,18 +97,82 @@ def score(Epsilon, ptime):
 # 146.05,145.74,145.83,143.88,140.39,139.34,140.05,137.93,138.78,
 # 139.59,140.54,141.31,140.42,140.18,138.43,138.97,139.31,139.26,
 # 140.08,141.1,143.48,143.28,143.5,143.12,142.14,142.54]
-spy_data, mmm_data = readCSV()
+# spy_data, mmm_data = readCSV()
 
-PTime = 477
+# PTime = 100
 
-spyRtn = np.log(spy_data[1:PTime+1]) - np.log(spy_data[0:PTime])
-mmmRtn = np.log(mmm_data[1:PTime+1]) - np.log(mmm_data[0:PTime])
+# spyRtn = np.log(spy_data[1:PTime+1]) - np.log(spy_data[0:PTime])
+# mmmRtn = np.log(mmm_data[1:PTime+1]) - np.log(mmm_data[0:PTime])
 
-beta0, beta1, epsilon = regression(spyRtn, mmmRtn)
-#print spy_data
-sscore = score(epsilon, PTime)
-print sscore
-plt.plot(range(0,len(sscore)),sscore)
+# beta0, beta1, epsilon = regression(spy_data, mmm_data, PTime)
+# print len(epsilon)
+# print mmm_data
+
+# sscore = score(epsilon, PTime)
+
+
+# print sscore
+
+# plt.plot(range(0,len(sscore)),sscore)
 #plt.axis([0,len(sscore),min(sscore)*1.2,max(sscore)*1.2])
-plt.axis([0,PTime,-0.3,0.3])
-plt.show()
+# plt.axis([0,PTime,-0.3,0.3])
+# plt.show()
+
+
+
+
+
+
+#def funcion(pairs, PTime): 
+	
+#	sscoreLst = []
+
+#	for i in pairs:
+#		spy_data, mmm_data = readCSV(ietfFile, iStkFile);
+#		beta0, beta1, epsilon = regression(spy_data, mmm_data, PTime)
+#		sscore = score(epsilon)
+
+#		realizedVol = ...(sscore)
+#		sscoreLst.append(realizedVol)
+
+#	return sscoreLst
+
+
+
+
+# def tradePair(stkSymbol, etfSymbol, PTime):
+    # spy_data, mmm_data = readCSV(ietfFile, iStkFile);
+    # beta0, beta1, epsilon = regression(spy_data, mmm_data, PTime)
+    # sscore = score(epsilon)
+
+    # sortedSS = sort(sscore)
+
+    # buyOpen = sortedSS[100*0.85]
+    # buyClose = sortedSS[100*0.0.6]
+    # shortOpen = sortedSS[100*0.15]
+    # buyCLose = sortedSS[100*0.4]
+
+
+
+#def funcion(pairs, PTime): 
+	
+#	sscoreLst = []
+
+#	for i in pairs:
+#		spy_data, mmm_data = readCSV(ietfFile, iStkFile);
+#		beta0, beta1, epsilon = regression(spy_data, mmm_data, PTime)
+#		sscore = score(epsilon)
+
+#		sortedSS = sort(sscore)
+
+#		buyOpen = sortedSS[100*0.85]
+#		buyClose = sortedSS[100*0.0.6]
+#		shortOpen = sortedSS[100*0.15]
+#		buyCLose = sortedSS[100*0.4]
+
+#	return sscoreLst
+
+
+
+
+
