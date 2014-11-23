@@ -8,7 +8,7 @@ def regression(listETF, listSTK):
 	gradient, intercept, r_value, p_value, std_err = stats.linregress(listETF, listSTK)
 	n = len(listETF)
 	residure = []
-	for i in xrange(0,941):
+	for i in xrange(0, n):
 		x = float(listSTK[i] - gradient * listETF[i] - intercept)
 		residure.append(x)
 	return intercept, gradient, residure
