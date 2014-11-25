@@ -55,8 +55,11 @@ def ols_transform(data, sid1, sid2):
     pEtf = data.price[sid2].values
     pEtfRtn = np.log(data.price[sid2].values[1:]) - np.log(data.price[sid2].values[0:-1])
     slope, intercept, r_value, p_value, std_err = stats.linregress(pEtfRtn, pStkRtn)
-
-    return slope, intercept
+    
+    # record the last prices for calculating returns!
+    lastStkPrice = pStk[-1]
+    lastEtfPrice = pEtf[-1]
+    return slope, intercept, lastStkPrice, lastEtfPrice
 
 
 class Pairtrade(TradingAlgorithm):
@@ -85,31 +88,37 @@ class Pairtrade(TradingAlgorithm):
         self.stk = Equity(stkSymbol)
         self.etf = Equity(etfSymbol)
 
+        # need to record the last prices for calculating returns!
+        self.lastStkPrice = 0
+        self.lastEtfPrice = 0
+
         # regression parameters
         self.beta = 0
         self.alpha = 0
 
         ## Stop Loss
+        self.STKSHARE = 100     # const stk share
         self.stopLoss = 0.1     # stop if loss more than 10%
         self.initBP = 0         # Used buying power after open the position
         self.closeBP = 0
         self.unPNL = 0;
         
+
+
         ## max holding time
         self.holdingTime = 0
         self.MAX_HOLDING = 30
+
+
 
     def handle_data(self, data):
         ######################################################
         # 1. Compute regression coefficients between CSCO and SPY
         params = self.ols_transform.handle_data(data, self.stk.symbol, self.etf.symbol)
         if params is None:
-            #print 'Cannot do regression, ', self.stk_symbol, ' and ', self.etf_symbol
             return
-        intercept, slope = params
 
-        self.beta = slope
-        self.alpha = intercept
+        self.beta, self.alpha, self.lastStkPrice, self.lastEtfPrice = params
 
         ######################################################
         # 2. Compute spread and zscore
@@ -154,6 +163,9 @@ class Pairtrade(TradingAlgorithm):
         """1. Compute the spread given slope and intercept.
            2. zscore the spread.
         """
+        lastStkRtn = np.log(data[self.stk.symbol].price/self.lastStkPrice)
+        lastEtfRtn = np.log(data[self.etf.symbol].price/self.lastEtfPrice)
+
         spread = (data[self.stk.symbol].price - (self.beta * data[self.etf.symbol].price + self.alpha))
         self.spreads.append(spread)
         spread_wind = self.spreads[-self.window_length : ]      # the last several residuals
@@ -166,10 +178,11 @@ class Pairtrade(TradingAlgorithm):
         """
 
         if zscore >= 2.0 and not self.invested:
-            self.etf.openPrice = data[self.etf.symbol].price
-            self.etf.share = int(1000 * self.beta / self.etf.openPrice)
+            # zscore positive, stock overperformed, short stk
             self.stk.openPrice = data[self.stk.symbol].price
-            self.stk.share = -int(1000 / self.stk.openPrice)
+            self.stk.share = -self.STKSHARE
+            self.etf.openPrice = data[self.etf.symbol].price
+            self.etf.share = int(self.STKSHARE * self.beta * self.stk.openPrice / self.etf.openPrice)
 
             self.order(self.stk.symbol, self.stk.share)
             self.order(self.etf.symbol, self.etf.share)
@@ -183,10 +196,11 @@ class Pairtrade(TradingAlgorithm):
             self.invested = True
 
         elif zscore <= -2.0 and not self.invested:
-            self.etf.openPrice = data[self.etf.symbol].price
-            self.etf.share = -int(1000 * self.beta / self.etf.openPrice)
+            # zscore positive, etf overperformed, short etf
             self.stk.openPrice = data[self.stk.symbol].price
-            self.stk.share = int(1000 / self.stk.openPrice)
+            self.stk.share = self.STKSHARE
+            self.etf.openPrice = data[self.etf.symbol].price
+            self.etf.share = -int(self.STKSHARE * self.beta * self.stk.openPrice / self.etf.openPrice)
 
             self.order(self.stk.symbol, self.stk.share)
             self.order(self.etf.symbol, self.etf.share)
