@@ -20,7 +20,6 @@ import pandas as pd
 import statsmodels.api as sm
 from datetime import datetime
 import pytz
-from pprint import *
 from scipy import stats
 import csv
 
@@ -29,6 +28,7 @@ from zipline.transforms import batch_transform
 from zipline.utils.factory import load_from_yahoo
 
 from Equity import *
+from sscore import *
 
 
 @batch_transform
@@ -123,7 +123,8 @@ class Pairtrade(TradingAlgorithm):
 
         ######################################################
         # 2. Compute spread and zscore
-        zscore = self.compute_zscore(data)
+        #zscore = self.compute_zscore(data)
+        zscore = self.compute_sscore(data)
         self.record(zscores=zscore)
 
         ######################################################
@@ -170,11 +171,28 @@ class Pairtrade(TradingAlgorithm):
         lastStkRtn = np.log(data[self.stk.symbol].price/self.lastStkPrice)
         lastEtfRtn = np.log(data[self.etf.symbol].price/self.lastEtfPrice)
 
-        spread = (data[self.stk.symbol].price - (self.beta * data[self.etf.symbol].price + self.alpha))
+        spread = lastStkRtn - (self.beta * lastEtfRtn + self.alpha)
         self.spreads.append(spread)
         spread_wind = self.spreads[-self.window_length : ]      # the last several residuals
         zscore = (spread - np.mean(spread_wind)) / np.std(spread_wind)
         return zscore
+
+
+
+    def compute_sscore(self, data):
+        lastStkRtn = np.log(data[self.stk.symbol].price/self.lastStkPrice)
+        lastEtfRtn = np.log(data[self.etf.symbol].price/self.lastEtfPrice)
+
+        spread = lastStkRtn - (self.beta * lastEtfRtn + self.alpha)
+        self.spreads.append(spread)
+        spread_wind = self.spreads[-self.window_length : ]      # the last several residuals
+
+        if (len(spread_wind) >= self.window_length):
+            pass
+
+        sscore = score(spread_wind, self.window_length)
+
+        return sscore
 
     def place_orders(self, data, zscore):
         """Buy spread if zscore is > 2, sell if zscore < .5.
@@ -238,91 +256,62 @@ class Pairtrade(TradingAlgorithm):
 if __name__ == '__main__':
 
     start = datetime(2011, 1, 1, 0, 0, 0, 0, pytz.utc)
-    end = datetime(2014, 10, 1, 0, 0, 0, 0, pytz.utc)
+    end = datetime(2012, 1, 1, 0, 0, 0, 0, pytz.utc)
 
-    sym = list(pd.read_csv('spy.csv')['Symbol'])
+    sym = list(pd.read_csv('dia.csv')['Symbol'])
 
-    stksymbol = ''
-    etfsymbol = 'SPY'
-    
-    errSymbol = []
-    portfResult = {}
-    for i in range(len(sym)):
-        stksymbol = sym[i]
+    stksymbol = 'AA'
+    etfsymbol = 'DIA'
 
-        try:
-            data = load_from_yahoo(stocks=[stksymbol, etfsymbol], indexes={}, start=start, end=end)
-        except IOError as e:
-            print "Cannot get {} from yahoo".format(stksymbol)
-            errSymbol.append(stksymbol)
-            continue
+    #errSymbol = []
+    #portfResult = {}
+    #for i in range(2):
+    #    stksymbol = sym[i]
 
-        pairtrade = Pairtrade(stksymbol, etfsymbol)
-        results = pairtrade.run(data)
-        data['spreads'] = np.nan
-        portfResult[stksymbol] = results.portfolio_value[-1] - results.portfolio_value[0]
-        #ax1 = plt.subplot(311)
-        #data[[stksymbol, etfsymbol]].plot(ax=ax1)
-        #plt.ylabel('price')
-        #plt.setp(ax1.get_xticklabels(), visible=False)
+    #    try:
+    #        data = load_from_yahoo(stocks=[stksymbol, etfsymbol], indexes={}, start=start, end=end)
+    #    except IOError as e:
+    #        print "Cannot get {} from yahoo".format(stksymbol)
+    #        errSymbol.append(stksymbol)
+    #        continue
 
-        #ax2 = plt.subplot(312, sharex=ax1)
-        #results.zscores.plot(ax=ax2, color='r')
-        #plt.ylabel('zscored spread')
+    #    pairtrade = Pairtrade(stksymbol, etfsymbol)
+    #    results = pairtrade.run(data)
+    #    data['spreads'] = np.nan
+    #    portfResult[stksymbol] = results.portfolio_value[-1] - results.portfolio_value[0]
 
-        #ax3 = plt.subplot(313, sharex = ax1)
-        #results.portfolio_value.plot(ax=ax3)
-        #plt.ylabel('portfolio value')
-        #plt.gcf().set_size_inches(18, 8)
-        #plt.show()
-    
-    # write dict to cscv
-    print errSymbol
+    #print errSymbol
 
-    #writer = csv.writer(open('dict.csv', 'wb'))
-    #for key, value in portfResult.items():
-    #    writer.writerow([key, value])
+    #with open('dict.csv', 'w') as outfile:
+    #    writer = csv.writer(outfile)
+    #    for key, value in portfResult.items():
+    #        writer.writerow([key, value])
+            
 
-    with open('dict.csv', 'w') as outfile:
-        writer = csv.writer(outfile)
-        for key, value in portfResult.items():
-            writer.writerow([key, value])
+    ############## test one symbol ##########################
+    data = load_from_yahoo(stocks=[stksymbol, etfsymbol], indexes={}, start=start, end=end)
 
+    pairtrade = Pairtrade(stksymbol, etfsymbol)
+    results = pairtrade.run(data)
+    data['spreads'] = np.nan
 
+    print results.portfolio_value
+    print results.portfolio_value[-1] - results.portfolio_value[0]
 
-    #data = load_from_yahoo(stocks=[stksymbol, etfsymbol], indexes={},
-    #                       start=start, end=end)
+    ax1 = plt.subplot(311)
+    data[[stksymbol, etfsymbol]].plot(ax=ax1)
+    plt.ylabel('price')
+    plt.setp(ax1.get_xticklabels(), visible=False)
 
-    #pairtrade = Pairtrade(stksymbol, etfsymbol)
-    #results = pairtrade.run(data)
-    #data['spreads'] = np.nan
+    ax2 = plt.subplot(312, sharex=ax1)
+    results.zscores.plot(ax=ax2, color='r')
+    plt.ylabel('zscored spread')
 
-    #print results.portfolio_value
-    #print results.portfolio_value[-1] - results.portfolio_value[0]
-
-    #ax1 = plt.subplot(311)
-    #data[[stksymbol, etfsymbol]].plot(ax=ax1)
-    #plt.ylabel('price')
-    #plt.setp(ax1.get_xticklabels(), visible=False)
-
-    #ax2 = plt.subplot(312, sharex=ax1)
-    #results.zscores.plot(ax=ax2, color='r')
-    #plt.ylabel('zscored spread')
-
-    #ax3 = plt.subplot(313, sharex = ax1)
-    #results.portfolio_value.plot(ax=ax3)
-    #plt.ylabel('portfolio value')
-    #plt.gcf().set_size_inches(18, 8)
-    #plt.show()
-
-    #ax1 = plt.subplot(211)
-    #results.zscores.plot(ax=ax1, color='r')
-    #plt.ylabel('zscored spread')
-    #plt.setp(ax1.get_xticklabels(), visible=False)
-
-    #ax2 = plt.subplot(212, sharex = ax1)
-    #results.portfolio_value.plot(ax=ax2)
-    #plt.ylabel('portfolio value')
+    ax3 = plt.subplot(313, sharex = ax1)
+    results.portfolio_value.plot(ax=ax3)
+    plt.ylabel('portfolio value')
+    plt.gcf().set_size_inches(18, 8)
+    plt.show()
 
 
     
